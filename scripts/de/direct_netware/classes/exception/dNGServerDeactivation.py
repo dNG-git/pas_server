@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 ##j## BOF
 
-"""/*n// NOTE
+"""n// NOTE
 ----------------------------------------------------------------------------
 direct PAS
 Python Application Services
@@ -31,9 +31,9 @@ http://www.direct-netware.de/redirect.php?licenses;gpl
 #echo(pasCompleteServerVersion)#
 pas/#echo(__FILEPATH__)#
 ----------------------------------------------------------------------------
-NOTE_END //n*/"""
+NOTE_END //n"""
 """
-de.direct_netware.server.thread.pas_server_thread
+de.direct_netware.classes.exception.dNGServerDeactivation
 
 @internal   We are using epydoc (JavaDoc style) to automate the
             documentation process for creating the Developer's Manual.
@@ -48,12 +48,13 @@ de.direct_netware.server.thread.pas_server_thread
             GNU General Public License 2
 """
 
-from threading import Thread
+from de.direct_netware.classes.exception.dNGException import dNGException
 
-class direct_server_thread (Thread):
+class dNGServerDeactivation (dNGException):
 #
 	"""
-Active thread for the "direct_server" infrastructure.
+The "dNGServerDeactivation" class is used to stop running "direct_server"
+threads-
 
 @author     direct Netware Group
 @copyright  (C) direct Netware Group - All rights reserved
@@ -64,92 +65,7 @@ Active thread for the "direct_server" infrastructure.
             GNU General Public License 2
 	"""
 
-	active_id = -1
-	"""
-Queue ID
-	"""
-	oob_data = None
-	"""
-Out of band data cache
-	"""
-	server = None
-	"""
-Server instance
-	"""
-	socket = None
-	"""
-Socket resource
-	"""
-
-	def __init__ (self):
-	#
-		"""
-Constructor __init__ (direct_server_thread)
-
-@since v0.1.00
-		"""
-
-		super(direct_server_thread,self).__init__ ()
-		self.active_id = -1
-		self.server = None
-		self.socket = None
-	#
-
-	def run (self):
-	#
-		"""
-Placeholder "run ()" method that only unqueues the current thread again.
-
-@since v0.1.00
-		"""
-
-		self.server.active_unqueue (self.active_id)
-	#
-
-	def get_socket (self):
-	#
-		"""
-Returns the socket connected to this thread.
-
-@since v0.1.00
-		"""
-
-		return self.socket
-	#
-
-	def set_instance_data (self,f_server,f_socket,f_id = -1):
-	#
-		"""
-Sets relevant instance data for this thread and socket connection.
-
-@param  f_server Server instance
-@param  f_socket Active socket resource
-@param  f_id Assigned ID
-@return (mixed) Thread assigned ID if any; False on error
-@since  v0.1.00
-		"""
-
-		self.active_id = f_id
-		self.server = f_server
-		self.socket = f_socket
-
-		self.start ()
-
-		if (f_id < 0): return -1
-		else: return False
-	#
-
-	def set_oob_data (self,f_oob_data):
-	#
-		"""
-This method is used to set data received out of band.
-
-@param f_oob_data Received out of band data
-@since v0.1.00
-		"""
-
-		self.oob_data = f_oob_data
-	#
+	pass
 #
 
 ##j## EOF
