@@ -1,6 +1,21 @@
 # -*- coding: utf-8 -*-
 ##j## BOF
 
+"""
+de.direct_netware.thread.pas_server
+
+@internal   We are using epydoc (JavaDoc style) to automate the
+            documentation process for creating the Developer's Manual.
+            Use the following line to ensure 76 character sizes:
+----------------------------------------------------------------------------
+@author     direct Netware Group
+@copyright  (C) direct Netware Group - All rights reserved
+@package    pas_complete
+@subpackage server
+@since      v0.1.00
+@license    http://www.direct-netware.de/redirect.php?licenses;gpl
+            GNU General Public License 2
+"""
 """n// NOTE
 ----------------------------------------------------------------------------
 direct PAS
@@ -32,33 +47,22 @@ http://www.direct-netware.de/redirect.php?licenses;gpl
 pas/#echo(__FILEPATH__)#
 ----------------------------------------------------------------------------
 NOTE_END //n"""
-"""
-de.direct_netware.thread.pas_server
 
-@internal   We are using epydoc (JavaDoc style) to automate the
-            documentation process for creating the Developer's Manual.
-            Use the following line to ensure 76 character sizes:
-----------------------------------------------------------------------------
-@author     direct Netware Group
-@copyright  (C) direct Netware Group - All rights reserved
-@package    pas_complete
-@subpackage server
-@since      v0.1.00
-@license    http://www.direct-netware.de/redirect.php?licenses;gpl
-            GNU General Public License 2
-"""
+from os import path
+from threading import local,RLock,Thread
+import asyncore,os,stat,socket,sys
 
+from de.direct_netware.classes.pas_globals import direct_globals
+from de.direct_netware.classes.pas_logger import direct_logger
+from de.direct_netware.classes.pas_pluginmanager import direct_plugin_hooks
+from de.direct_netware.classes.pas_pythonback import direct_str
 from de.direct_netware.classes.exception.dNGServerDeactivation import dNGServerDeactivation
-from pas_server_thread import direct_server_thread
-from socket import AF_INET,AF_INET6,AF_UNIX
-from threading import RLock
-from twisted.internet import protocol,reactor
-import sys,time
+from .pas_server_thread import direct_server_thread
 
-_direct_complete_server = None
+_direct_complete_server = local ()
 _direct_complete_server_stream_err = None
 
-class direct_server (protocol.ServerFactory):
+class direct_server (asyncore.dispatcher):
 #
 	"""
 The "direct_server" infrastructure allows an application to provide active
@@ -94,9 +98,13 @@ Active queue maximum
 	"""
 Active queue handler
 	"""
-	listener_data = None
+	debug = None
 	"""
-Listener bind data
+Debug message container
+	"""
+	local = None
+	"""
+Local data handle
 	"""
 	queue_handler = None
 	"""
@@ -110,140 +118,379 @@ Passive queue maximum
 	"""
 Thread safety lock
 	"""
+	waiting = 0
+	"""
+Thread safety lock
+	"""
 
-	def __init__ (self,f_listener_type,f_listener_bind_address,f_listener_bind_port,f_active_handler,f_threads_active = 5,f_queue_handler = None,f_threads_queued = 10,f_stream_err = sys.stderr):
+	def __init__ (self,listener_type,listener_bind_address,listener_bind_port,active_handler,threads_active = 5,queue_handler = None,threads_queued = 10,stream_err = sys.stderr,thread = False,thread_stopping_hook = None):
 	#
 		"""
 Constructor __init__ (direct_server)
 
-@param f_listener_type Listener type
-@param f_listener_bind_address Listener address
-@param f_listener_bind_port Port if applicable
-@param f_active_handler Thread to be used for activated connections
-@param f_threads_active Allowed simultaneous threads
-@param f_queue_handler Thread to be used for queued connections
-@param f_threads_queued Allowed queued threads
-@param f_stream_err Error stream
+@param listener_type Listener type
+@param listener_bind_address Listener address
+@param listener_bind_port Port if applicable
+@param active_handler Thread to be used for activated connections
+@param threads_active Allowed simultaneous threads
+@param queue_handler Thread to be used for queued connections
+@param threads_queued Allowed queued threads
+@param stream_err Error stream
 @since v0.1.00
 		"""
 
-		global _direct_complete_server
+		self.local = local ()
+		self.thread_local_check ()
 
-		_direct_complete_server = self
-		direct_server.set_stream_err (f_stream_err)
+		asyncore.dispatcher.__init__ (self,map = self.local.sockets)
 
-		self.active = False
-		if (issubclass (f_active_handler,direct_server_thread)): self.protocol = f_active_handler
+		self.debug = direct_globals['debug']
+		if (self.debug != None): self.debug.append ("#echo(__FILEPATH__)# -server.__init__ (direct_server)- (#echo(__LINE__)#)")
+
+		direct_server.stream_err_set (stream_err)
+
+		if (issubclass (active_handler,direct_server_thread)): self.active_handler = active_handler
 		self.actives = 0
-		self.actives_array = [ None ] * f_threads_active
-		self.actives_max = f_threads_active
-		if ((f_queue_handler != None) and (isinstance (f_queue_handler,direct_server_thread))): self.queue_handler = f_queue_handler
-		self.queue_max = f_threads_queued
+		self.actives_array = [ None ] * threads_active
+		self.actives_max = threads_active
+		if ((queue_handler != None) and (isinstance (queue_handler,direct_server_thread))): self.queue_handler = queue_handler
+		self.queue_max = threads_queued
 		self.synchronized = RLock ()
 
 		try:
 		#
-			if ((f_listener_type == AF_INET) or (f_listener_type == AF_INET6)):
+			listener_bind_address = direct_str (listener_bind_address)
+			socket.setdefaulttimeout (int (direct_globals['settings'].get ("pas_socket_data_timeout",5)))
+
+			if ((listener_type == socket.AF_INET) or (listener_type == socket.AF_INET6)):
 			#
-				self.listener_data = ( f_listener_bind_address,f_listener_bind_port )
-				reactor.listenTCP (self.listener_data[1],self,interface = self.listener_data[0])
+				direct_globals['logger'].write (direct_logger.INFO,"pas.server will listen on '{0}:{1:d}' for connections".format (listener_bind_address,listener_bind_port))
+
+				self.local.listener_data = ( listener_bind_address,listener_bind_port )
+
+				self.create_socket (listener_type,socket.SOCK_STREAM)
+				self.set_reuse_addr ()
+				self.bind (self.local.listener_data)
 			#
-			elif (f_listener_type == AF_UNIX):
+			elif (listener_type == socket.AF_UNIX):
 			#
-				self.listener_data = f_listener_bind_address
-				reactor.listenUNIX (self.listener_data,self,wantPID = True)
+				self.local.listener_data = path.normpath (listener_bind_address)
+				if (os.access (self.local.listener_data,os.F_OK)): os.unlink (self.local.listener_data)
+
+				direct_globals['logger'].write (direct_logger.INFO,"pas.server will listen at '{0}' for connections".format (listener_bind_address))
+
+				self.create_socket (listener_type,socket.SOCK_STREAM)
+				self.set_reuse_addr ()
+				self.bind (self.local.listener_data)
+
+				try:
+				#
+					f_chmod = 0
+					f_chmod_value= int (direct_globals['settings'].get ("pas_chmod_unix_sockets",600),8)
+
+					if ((1000 & f_chmod_value) == 1000): f_chmod |= stat.S_ISVTX
+					if ((2000 & f_chmod_value) == 2000): f_chmod |= stat.S_ISGID
+					if ((4000 & f_chmod_value) == 4000): f_chmod |= stat.S_ISUID
+					if ((0o100 & f_chmod_value) == 0o100): f_chmod |= stat.S_IXUSR
+					if ((0o200 & f_chmod_value) == 0o200): f_chmod |= stat.S_IWUSR
+					if ((0o400 & f_chmod_value) == 0o400): f_chmod |= stat.S_IRUSR
+					if ((0o010 & f_chmod_value) == 0o010): f_chmod |= stat.S_IXGRP
+					if ((0o020 & f_chmod_value) == 0o020): f_chmod |= stat.S_IWGRP
+					if ((0o040 & f_chmod_value) == 0o040): f_chmod |= stat.S_IRGRP
+					if ((0o001 & f_chmod_value) == 0o001): f_chmod |= stat.S_IXOTH
+					if ((0o002 & f_chmod_value) == 0o002): f_chmod |= stat.S_IWOTH
+					if ((0o004 & f_chmod_value) == 0o004): f_chmod |= stat.S_IROTH
+
+					os.chmod (self.local.listener_data,f_chmod)
+				#
+				except Exception as f_handled_exception: direct_globals['logger'].write (direct_logger.CRITICAL,f_handled_exception)
 			#
 		#
-		except dNGServerDeactivation,f_handled_exception:
+		except dNGServerDeactivation as f_handled_exception:
 		#
 			f_exception = f_handled_exception.get_cause ()
-			if (f_exception != None): f_handled_exception.print_stack_trace (direct_server.get_stream_err ())
+
+			if (f_exception == None): direct_globals['logger'].write (direct_logger.CRITICAL,f_handled_exception)
+			else: f_handled_exception.print_stack_trace (direct_server.stream_err_get ())
 		#
-		except Exception,f_handled_exception: dNGServerDeactivation.print_current_stack_trace (direct_server.get_stream_err ())
+		except Exception as f_handled_exception:
+		#
+			direct_globals['logger'].write (direct_logger.CRITICAL,f_handled_exception)
+			dNGServerDeactivation.print_current_stack_trace (direct_server.stream_err_get ())
+		#
+
+		if ((thread) and (thread_stopping_hook != None)):
+		#
+			direct_plugin_hooks.register (thread_stopping_hook,self.thread_stop_listener)
+			self.start_listener ()
+			self.run ()
+		#
 	#
 
-	def buildProtocol (self,addr):
+	def handle_accept (self):
 	#
 		"""
-twistedmatrix.com: Create an instance of a subclass of Protocol.
+python.org: Called on listening channels (passive openers) when a connection
+can be established with a new remote endpoint that has issued a connect()
+call for the local endpoint.
 
 @since v0.1.00
 		"""
 
-		f_protocol = None
+		if (self.debug != None): self.debug.append ("#echo(__FILEPATH__)# -server.handle_accept ()- (#echo(__LINE__)#)")
+
+		self.synchronized.acquire ()
 
 		if (self.active):
 		#
 			try:
 			#
-				f_protocol = protocol.ServerFactory.buildProtocol (self,addr)
-				f_id = self.active_queue (f_protocol)
+				f_remote_socket = self.accept ()
 
-				if (f_id >= 0): f_protocol.set_instance_data (self,addr,f_id)
-				elif ((f_id == -1) and (not self.active)): f_protocol.loseConnection ()
+				if (f_remote_socket != None): f_id = self.active_queue (f_remote_socket[0])
+				self.synchronized.release ()
+
+				if (f_remote_socket != None): self.active_activate (f_id,f_remote_socket[0])
 			#
-			except dNGServerDeactivation,f_handled_exception:
+			except dNGServerDeactivation as f_handled_exception:
 			#
 				f_exception = f_handled_exception.get_cause ()
-				if (f_exception != None): f_handled_exception.print_stack_trace (direct_server.get_stream_err ())
-			#
-			except Exception,f_handled_exception: dNGServerDeactivation.print_current_stack_trace (direct_server.get_stream_err ())
-		#
 
-		return f_protocol
+				if (f_exception == None): direct_globals['logger'].write (direct_logger.CRITICAL,f_handled_exception)
+				else: f_handled_exception.print_stack_trace (direct_server.stream_err_get ())
+			#
+			except Exception as f_handled_exception:
+			#
+				direct_globals['logger'].write (direct_logger.CRITICAL,f_handled_exception)
+				dNGServerDeactivation.print_current_stack_trace (direct_server.stream_err_get ())
+			#
+		#
+		else: self.synchronized.release ()
 	#
 
-	def active_queue (self,f_protocol):
+	def handle_close (self):
+	#
+		"""
+python.org: Called when the socket is closed.
+
+@since v0.1.00
+		"""
+
+		if (self.debug != None): self.debug.append ("#echo(__FILEPATH__)# -server.handle_close ()- (#echo(__LINE__)#)")
+
+		self.synchronized.acquire ()
+
+		if (self.active):
+		#
+			self.synchronized.release ()
+			self.stop_listener ()
+		#
+		else: self.synchronized.release ()
+	#
+
+	def handle_connect (self):
+	#
+		"""
+python.org: Called when the active opener's socket actually makes a
+connection. Might send a "welcome" banner, or initiate a protocol
+negotiation with the remote endpoint, for example.
+
+@since v0.1.00
+		"""
+
+		if (self.debug != None): self.debug.append ("#echo(__FILEPATH__)# -server.handle_connect ()- (#echo(__LINE__)#)")
+
+		self.synchronized.acquire ()
+
+		if (self.active):
+		#
+			try: self.listen (self.queue_max)
+			except: dNGServerDeactivation.print_current_stack_trace (direct_server.stream_err_get ())
+
+			self.synchronized.release ()
+		#
+		else: self.synchronized.release ()
+	#
+
+	def handle_read (self):
+	#
+		"""
+python.org: Called when the asynchronous loop detects that a "read ()" call
+on the channel's socket will succeed.
+
+@since v0.1.00
+		"""
+
+		pass
+	#
+
+	def handle_expt (self):
+	#
+		"""
+python.org: Called when there is out of band (OOB) data for a socket
+connection. This will almost never happen, as OOB is tenuously supported and
+rarely used.
+
+@since v0.1.00
+		"""
+
+		if (self.debug != None): self.debug.append ("#echo(__FILEPATH__)# -server.handle_expt ()- (#echo(__LINE__)#)")
+
+		self.synchronized.acquire ()
+
+		if (self.active):
+		#
+			self.active_unqueue_all ()
+			self.synchronized.release ()
+		#
+		else: self.synchronized.release ()
+	#
+
+	def run (self):
+	#
+		"""
+Run the main loop for this server instance.
+
+@since v0.1.00
+		"""
+
+		if (self.debug != None): self.debug.append ("#echo(__FILEPATH__)# -server.run ()- (#echo(__LINE__)#)")
+
+		self.thread_local_check ()
+		asyncore.loop (map = self.local.sockets)
+	#
+
+	def writable (self):
+	#
+		"""
+python.org: Called each time around the asynchronous loop to determine
+whether a channel's socket should be added to the list on which write events
+can occur. The default method simply returns True, indicating that by
+default, all channels will be interested in write events.
+
+@return (bool) Always False
+@since  v0.1.00
+		"""
+
+		return False
+	#
+
+	def active_activate (self,id,py_socket):
+	#
+		"""
+Unqueue the given ID from the active queue.
+
+@param id Queue ID
+@since v0.1.00
+		"""
+
+		if (self.debug != None): self.debug.append ("#echo(__FILEPATH__)# -server.active_activate ({0:d},py_socket)- (#echo(__LINE__)#)".format (id))
+
+		if (id >= 0):
+		#
+			f_handler = self.active_handler.__new__ (self.active_handler)
+			f_handler.__init__ ()
+			f_handler.set_instance_data (self,py_socket,id)
+			f_handler.start ()
+
+			if (self.debug != None): direct_globals['logger'].write (direct_logger.DEBUG,"pas.server started a new thread: {0:d} for {1!r}".format (id,f_handler))
+		#
+		elif ((id == -1) and (not self.active)):
+		#
+			try: py_socket.close ()
+			except socket.error: pass
+		#
+	#
+
+	def active_queue (self,py_socket):
 	#
 		"""
 Put's an transport on the active queue or tries to temporarily save it on
 the passive queue.
 
-@param  f_protocol Active transport object
+@param  py_socket Active socket resource
 @return (mixed) Selected queue ID (> -1) on success; True if passively queued.
 @since  v0.1.00
 		"""
 
+		if (self.debug != None): self.debug.append ("#echo(__FILEPATH__)# -server.active_queue (py_socket)- (#echo(__LINE__)#)")
 		f_return = -1
+
+		self.synchronized.acquire ()
 
 		if (self.active):
 		#
+			self.synchronized.release ()
+
 			while (f_return < 0):
 			#
-				f_return = self.queue (self.actives_array,self.actives_max,f_protocol)
+				f_return = -1
+
+				self.synchronized.acquire ()
+
+				for f_i in range (self.actives_max):
+				#
+					if ((f_return < 0) and (self.actives_array[f_i] == None)):
+					#
+						if (self.actives_array[f_i] == None): f_return = f_i
+						elif (not self.actives_array[f_i].is_alive ()): f_return = f_i
+
+						if (f_return > -1):
+						#
+							self.actives_array[f_i] = py_socket
+							break
+						#
+					#
+				#
+
+				self.synchronized.release ()
 
 				if (f_return < 0):
 				#
-					if ((self.queue_handler == None) or (self.queue_running >= self.queue_max)): time.sleep (0.5)
-					else:
+					self.synchronized.acquire ()
+
+					if ((self.queue_handler != None) and (self.waiting < self.queue_max)):
 					#
 						try:
 						#
 							f_handler = self.queue_handler.__new__ (self.queue_handler)
 							f_handler.__init__ ()
-							f_return = f_handler.set_instance_data (self,f_protocol)
+							f_handler.set_instance_data (self,py_socket)
+							f_handler.start ()
+
+							self.waiting += 1
+							f_return = -2
 						#
-						except Exception,f_unhandled_exception: f_return = -1
+						except Exception as f_handled_exception:
+						#
+							direct_globals['logger'].write (direct_logger.CRITICAL,f_handled_exception)
+							f_return = -1
+						#
 					#
+
+					self.synchronized.release ()
 				#
 				else: self.actives += 1
 			#
 		#
+		else: self.synchronized.release ()
 
-		return f_return;
+		return f_return
 	#
 
-	def active_unqueue (self,f_id):
+	def active_unqueue (self,id):
 	#
 		"""
 Unqueue the given ID from the active queue.
 
-@param f_id Queue ID
+@param id Queue ID
 @since v0.1.00
 		"""
 
+		if (self.debug != None): self.debug.append ("#echo(__FILEPATH__)# -server.active_unqueue ({0:d})- (#echo(__LINE__)#)".format (id))
+
 		self.synchronized.acquire ()
-		if (self.unqueue (self.actives_array,f_id)): self.actives -= 1
+		if (self.unqueue (self.actives_array,id)): self.actives -= 1
 		self.synchronized.release ()
 	#
 
@@ -256,20 +503,18 @@ Unqueue all entries from the active queue (canceling running processes).
 @since v0.1.00
 		"""
 
-		self.unqueue_all (self.actives_array,self.actives_max)
+		if (self.debug != None): self.debug.append ("#echo(__FILEPATH__)# -server.active_unqueue_all ()- (#echo(__LINE__)#)")
+
+		self.synchronized.acquire ()
+
+		for f_i in range (self.actives_max):
+		#
+			if (self.actives_array[f_i] != None): self.unqueue (self.actives_array,f_i)
+		#
+
+		self.synchronized.release ()
+
 		self.actives = 0
-	#
-
-	def get_listener (self):
-	#
-		"""
-Return the socket listener.
-
-@return (object) Listener
-@since  v0.1.00
-		"""
-
-		return self
 	#
 
 	def get_status (self):
@@ -281,82 +526,72 @@ Return the socket status.
 @since  v0.1.00
 		"""
 
-		return self.active
-	#
+		if (self.debug != None): self.debug.append ("#echo(__FILEPATH__)# -server.get_status ()- (#echo(__LINE__)#)")
 
-	def queue (self,f_queue,f_queue_max,f_protocol):
-	#
-		"""
-Tries to find a unused queue position to accept the current socket request.
-
-@return (int) Queue ID (> -1) on success
-@since  v0.1.00
-		"""
-
-		f_return = -1
-
-		for f_i in range (f_queue_max):
-		#
-			if ((f_return < 0) and (f_queue[f_i] == None)):
-			#
-				f_queue[f_i] = f_protocol
-				f_return = f_i
-			#
-		#
+		self.synchronized.acquire ()
+		f_return = self.active
+		self.synchronized.release ()
 
 		return f_return
 	#
 
-	def set_active (self,f_status):
+	def queue_unqueue (self,py_socket):
+	#
+		"""
+Unqueue the given ID from the active queue.
+
+@param id Queue ID
+@since v0.1.00
+		"""
+
+		if (self.debug != None): self.debug.append ("#echo(__FILEPATH__)# -server.active_unqueue (py_socket)- (#echo(__LINE__)#)")
+
+		self.synchronized.acquire ()
+
+		f_return = self.active_queue (py_socket)
+		if (f_return >= 0): self.waiting -= 1
+
+		self.synchronized.release ()
+
+		if (f_return >= 0): self.active_activate (f_return,py_socket)
+
+		return f_return
+	#
+
+	def set_active (self,status):
 	#
 		"""
 Sets the status for the listener.
 
-@param f_status New status
+@param status New status
 @since v0.1.00
 		"""
 
-		self.synchronized.acquire ()
-		self.active = f_status
-		self.synchronized.release ()
-	#
-
-	def set_queue (self):
-	#
-		"""
-Adds a passive queue to the counter.
-
-@since v0.1.00
-		"""
+		if (self.debug != None): self.debug.append ("#echo(__FILEPATH__)# -server.set_active (status)- (#echo(__LINE__)#)")
 
 		self.synchronized.acquire ()
-		self.queue_running += 1
-		self.synchronized.release ()
-	#
-
-	def set_unqueue (self):
-	#
-		"""
-Removes a passive queue from the counter.
-
-@since v0.1.00
-		"""
-
-		self.synchronized.acquire ()
-		if (self.queue_running > 0): self.queue_running -= 1
+		if (self.active != status): self.active = status
 		self.synchronized.release ()
 	#
 
 	def start_listener (self):
 	#
 		"""
-Stops the listener and unqueues all running sockets.
+Starts the listener and readies this server instance.
 
 @since v0.1.00
 		"""
 
+		if (self.debug != None): self.debug.append ("#echo(__FILEPATH__)# -server.start_listener ()- (#echo(__LINE__)#)")
+
 		self.synchronized.acquire ()
-		if (not self.active): self.active = True
+
+		if (not self.active):
+		#
+			self.listen (self.queue_max)
+			self.active = True
+		#
+
 		self.synchronized.release ()
 	#
 
@@ -368,56 +603,100 @@ Stops the listener and unqueues all running sockets.
 @since v0.1.00
 		"""
 
+		if (self.debug != None): self.debug.append ("#echo(__FILEPATH__)# -server.stop_listener ()- (#echo(__LINE__)#)")
+
 		self.synchronized.acquire ()
 
-		if (self.active): self.active = False
-		self.active_unqueue_all ()
+		if (self.active):
+		#
+			self.active = False
+			self.synchronized.release ()
 
-		self.synchronized.release ()
+			try: self.close ()
+			except socket.error: pass
+
+			self.active_unqueue_all ()
+		#
+		else: self.synchronized.release ()
 	#
 
-	def unqueue (self,f_queue,f_id):
+	def thread_local_check (self):
+	#
+		"""
+For thread safety some variables are defined per thread. This method makes
+sure that these variables are defined.
+
+@since v0.1.00
+		"""
+
+		if (self.debug != None): self.debug.append ("#echo(__FILEPATH__)# -server.thread_local_check ()- (#echo(__LINE__)#)")
+
+		if (not hasattr (self.local,"sockets")):
+		#
+			self.local.listener_data = None
+			self.local.sockets = { }
+		#
+	#
+
+	def thread_stop_listener (self,params = None,last_return = None):
+	#
+		"""
+Stops the running server instance by an plugin call.
+
+@param  params Parameter specified calling "direct_pluginmanager".
+@param  last_return The return value from the last hook called.
+@return (None) None to stop communication after this call
+@since  v1.0.0
+		"""
+
+		self.stop_listener ()
+	#
+
+	def unqueue (self,queue,id):
 	#
 		"""
 Unqueues a previously active socket connection.
 
-@param  f_queue Queue object
-@param  f_id Queue ID
+@param  queue Queue object
+@param  id Queue ID
 @return (bool) True on success
 @since  v0.1.00
 		"""
 
+		if (self.debug != None): self.debug.append ("#echo(__FILEPATH__)# -server.unqueue (queue,{0:d})- (#echo(__LINE__)#)".format (id))
 		f_return = False
 
-		if (f_queue[f_id] != None):
+		if (queue[id] != None):
 		#
 			f_return = True
-			f_protocol = f_queue[f_id]
-			f_queue[f_id] = None
+			f_socket = queue[id]
+			queue[id] = None
 
-			f_protocol.loseConnection ()
+			try:
+			#
+				f_socket.shutdown (socket.SHUT_RD)
+				f_socket.close ()
+			#
+			except socket.error: pass
 		#
 
 		return f_return
 	#
 
-	def unqueue_all (self,f_queue,f_queue_max):
+	def thread (listener_type,listener_bind_address,listener_bind_port,active_handler,threads_active = 5,queue_handler = None,threads_queued = 10,stream_err = sys.stderr,thread_stopping_hook = "de.direct_netware.psd.status.exit"):
 	#
 		"""
-Unqueues all entries from the given queue.
+Return a thread instance to be used as a server.
 
-@param f_queue Queue object
-@param f_queue_max Highest queue ID
-@since v0.1.00
+@return (object) Currently set error stream object
+@since  v0.1.00
 		"""
 
-		for f_i in range (f_queue_max):
-		#
-			if (f_queue[f_i] != None): self.unqueue (f_queue,f_i)
-		#
+		return Thread (target = direct_server,args = ( listener_type,listener_bind_address,listener_bind_port,active_handler,threads_active,queue_handler,threads_queued,stream_err,True,thread_stopping_hook ))
 	#
+	thread = staticmethod (thread)
 
-	def get_stream_err ():
+	def stream_err_get ():
 	#
 		"""
 Return the thread save error stream object.
@@ -429,22 +708,22 @@ Return the thread save error stream object.
 		global _direct_complete_server_stream_err
 		return _direct_complete_server_stream_err
 	#
-	get_stream_err = staticmethod (get_stream_err)
+	stream_err_get = staticmethod (stream_err_get)
 
-	def set_stream_err (f_stream_err):
+	def stream_err_set (stream_err):
 	#
 		"""
 Sets a error stream object and makes it thread save if needed.
 
-@param f_stream_err Error stream object
+@param stream_err Error stream object
 @since v0.1.00
 		"""
 
 		global _direct_complete_server_stream_err
 		# TODO: Pack the IO object into a thread safe one
-		_direct_complete_server_stream_err = f_stream_err
+		_direct_complete_server_stream_err = stream_err
 	#
-	set_stream_err = staticmethod (set_stream_err)
+	stream_err_set = staticmethod (stream_err_set)
 #
 
 ##j## EOF

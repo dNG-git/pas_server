@@ -1,6 +1,21 @@
 # -*- coding: utf-8 -*-
 ##j## BOF
 
+"""
+de.direct_netware.thread.pas_server_thread
+
+@internal   We are using epydoc (JavaDoc style) to automate the
+            documentation process for creating the Developer's Manual.
+            Use the following line to ensure 76 character sizes:
+----------------------------------------------------------------------------
+@author     direct Netware Group
+@copyright  (C) direct Netware Group - All rights reserved
+@package    pas_complete
+@subpackage server
+@since      v0.1.00
+@license    http://www.direct-netware.de/redirect.php?licenses;gpl
+            GNU General Public License 2
+"""
 """n// NOTE
 ----------------------------------------------------------------------------
 direct PAS
@@ -32,27 +47,16 @@ http://www.direct-netware.de/redirect.php?licenses;gpl
 pas/#echo(__FILEPATH__)#
 ----------------------------------------------------------------------------
 NOTE_END //n"""
-"""
-de.direct_netware.thread.pas_server_thread
 
-@internal   We are using epydoc (JavaDoc style) to automate the
-            documentation process for creating the Developer's Manual.
-            Use the following line to ensure 76 character sizes:
-----------------------------------------------------------------------------
-@author     direct Netware Group
-@copyright  (C) direct Netware Group - All rights reserved
-@package    pas_complete
-@subpackage server
-@since      v0.1.00
-@license    http://www.direct-netware.de/redirect.php?licenses;gpl
-            GNU General Public License 2
-"""
+from socket import error as socket_error
+from threading import Thread
+import time
 
-from exceptions import EOFError
-from twisted.internet import threads,protocol,reactor
-from threading import Event,RLock
+from de.direct_netware.classes.pas_globals import direct_globals
+from de.direct_netware.classes.pas_logger import direct_logger
+from de.direct_netware.classes.pas_pythonback import *
 
-class direct_server_thread (protocol.Protocol):
+class direct_server_thread (Thread):
 #
 	"""
 Active thread for the "direct_server" infrastructure.
@@ -70,25 +74,21 @@ Active thread for the "direct_server" infrastructure.
 	"""
 Queue ID
 	"""
-	address = None
-	"""
-Client address
-	"""
 	data = ""
 	"""
-Client address
+Daat buffer
 	"""
-	data_event = None
+	debug = None
 	"""
-Server instance
+Debug message container
 	"""
 	server = None
 	"""
 Server instance
 	"""
-	synchronized = None
+	timeout = 5
 	"""
-Server instance
+Request timeout value
 	"""
 
 	def __init__ (self):
@@ -99,92 +99,73 @@ Constructor __init__ (direct_server_thread)
 @since v0.1.00
 		"""
 
+		Thread.__init__ (self)
+
 		self.active_id = -1
-		self.address = None
 		self.data = ""
-		self.data_event = Event ()
+		self.daemon = True
+		self.debug = direct_globals['debug']
 		self.server = None
-		self.synchronized = RLock ()
+		self.socket = None
+
+		if (self.debug != None): self.debug.append ("#echo(__FILEPATH__)# -server_thread.__init__ (direct_server_thread)- (#echo(__LINE__)#)")
+
+		if ("pas_socket_data_timeout" in direct_globals['settings']): self.timeout = direct_globals['settings']['pas_socket_data_timeout']
+		else: self.timeout = 5
 	#
 
-	def dataReceived (self,data):
+	def get_data (self,size = 0,force_size = False):
 	#
 		"""
-twistedmatrix.com: Called whenever data is received.
+Returns data read from the socket.
 
 @since v0.1.00
 		"""
 
-		self.synchronized.acquire ()
-		self.data += data
-		self.data_event.set ()
-		self.synchronized.release ()
-	#
-
-	def loseConnection (self):
-	#
-		"""
-twistedmatrix.com: Close my connection, after writing all pending data.
-
-@since v0.1.00
-		"""
-
-		self.transport.loseConnection ()
-	#
-
-	def get_address (self):
-	#
-		"""
-Returns the address connected to this thread.
-
-@since v0.1.00
-		"""
-
-		return self.address
-	#
-
-	def get_data (self,f_size = 0):
-	#
-		"""
-Returns the address connected to this thread.
-
-@since v0.1.00
-		"""
-
+		if (self.debug != None): self.debug.append ("#echo(__FILEPATH__)# -server_thread.get_data ({0:d},force_size)- (#echo(__LINE__)#)".format (size))
 		f_return = None
 
-		while (f_return == None):
+		f_data = None
+		f_data_size = 0
+		f_timeout_time = (time.time () + self.timeout)
+
+		while (((f_data == None) or ((force_size) and (f_data_size < size))) and (f_timeout_time > (time.time ()))):
 		#
-			self.synchronized.acquire ()
-			f_data_size = len (self.data)
+			try:
+			#
+				f_data = self.socket.recv (size)
 
-			if (f_data_size > 0):
-			#
-				if (f_size > 0):
+				if (len (f_data) > 0):
 				#
-					f_return = self.data[:f_size]
-					self.data = self.data[f_size:]
+					self.data += direct_str (f_data)
+					f_data_size = len (direct_bytes (self.data))
 				#
-				else:
-				#
-					f_return = self.data
-					self.data = ""
-					self.data_event.clear ()
-				#
-
-				self.synchronized.release ()
+				else: f_data = None
 			#
-			else:
-			#
-				self.data_event.clear ()
-				self.synchronized.release ()
-
-				self.data_event.wait (1)
-				if (not self.data_event.is_set ()): raise EOFError ("get_data (%i)" % f_size)
-			#
+			except socket_error: f_data = None
 		#
 
-		return f_return
+		if (len (self.data) > 0):
+		#
+			f_return = self.data
+			self.data = ""
+		#
+
+		if ((f_return != None) and ((not force_size) or (size <= f_data_size))): return f_return
+		else: raise socket_error ("get_data ({0:d})".format (size))
+	#
+
+	def set_data (self,data):
+	#
+		"""
+Sets data returned next time "get_data ()" is called. It is placed in front of
+the data buffer.
+
+@since v0.1.00
+		"""
+
+		if (self.debug != None): self.debug.append ("#echo(__FILEPATH__)# -server_thread.set_data (data)- (#echo(__LINE__)#)")
+		self.data = ((direct_str (data)) + self.data)
 	#
 
 	def run (self):
@@ -195,60 +176,70 @@ Placeholder "run ()" method that only unqueues the current thread again.
 @since v0.1.00
 		"""
 
+		try: self.thread_run ()
+		except Exception as f_handled_exception: direct_logger.critical (f_handled_exception)
+
 		self.server.active_unqueue (self.active_id)
 	#
 
-	def set_data (self,f_data):
-	#
-		"""
-twistedmatrix.com: Called whenever data is received.
-
-@since v0.1.00
-		"""
-
-		self.synchronized.acquire ()
-		self.data = f_data + self.data
-		self.synchronized.release ()
-	#
-
-	def set_instance_data (self,f_server,f_address,f_id = -1):
+	def set_instance_data (self,server,socket,id = -1):
 	#
 		"""
 Sets relevant instance data for this thread and address connection.
 
-@param  f_server Server instance
-@param  f_address Active address resource
-@param  f_id Assigned ID
+@param  server Server instance
+@param  socket Active socket resource
+@param  id Assigned ID
 @return (mixed) Thread assigned ID if any; False on error
 @since  v0.1.00
 		"""
 
-		self.active_id = f_id
-		self.address = f_address
-		self.server = f_server
+		if (self.debug != None): self.debug.append ("#echo(__FILEPATH__)# -server_thread.set_instance_data (server,socket,{0:d})- (#echo(__LINE__)#)".format (id))
 
-		threads.deferToThread (self.run)
+		self.active_id = id
+		self.server = server
 
-		if (f_id < 0): return -1
+		self.socket = socket
+		self.socket.setblocking (0)
+
+		if (id < 0): return -1
 		else: return True
 	#
 
-	def write_data (self,f_data):
+	def thread_run (self):
 	#
 		"""
-Write a message to the socket.
+Placeholder "run ()" method that only unqueues the current thread again.
 
-@param  f_msg Message
+@since v0.1.00
+		"""
+
+		if (self.debug != None): self.debug.append ("#echo(__FILEPATH__)# -server_thread->thread_run ()- (#echo(__LINE__)#)")
+	#
+
+	def write_data (self,data):
+	#
+		"""
+Write data to the socket.
+
+@param  data Data to be written
 @return (bool) True on success
 @since  v1.0.0
 		"""
 
+		if (self.debug != None): self.debug.append ("#echo(__FILEPATH__)# -server_thread.write_data (data)- (#echo(__LINE__)#)")
 		f_return = True
+
+		f_data = direct_bytes (data)
 
 		if (len (f_data) > 0):
 		#
-			try: reactor.callFromThread (self.transport.write,f_data)
-			except Exception,f_handled_exception: f_return = False
+			try: self.socket.sendall (f_data)
+			except socket_error as f_handled_exception:
+			#
+				direct_logger.critical (f_handled_exception)
+				f_return = False
+			#
 		#
 
 		return f_return
