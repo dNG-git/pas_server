@@ -13,8 +13,8 @@ de.direct_netware.thread.pas_server
 @package    pas_complete
 @subpackage server
 @since      v0.1.00
-@license    http://www.direct-netware.de/redirect.php?licenses;gpl
-            GNU General Public License 2
+@license    http://www.direct-netware.de/redirect.php?licenses;mpl2
+            Mozilla Public License, v. 2.0
 """
 """n// NOTE
 ----------------------------------------------------------------------------
@@ -24,24 +24,11 @@ Python Application Services
 (C) direct Netware Group - All rights reserved
 http://www.direct-netware.de/redirect.php?pas
 
-The following license agreement remains valid unless any additions or
-changes are being made by direct Netware Group in a written form.
-
-This program is free software; you can redistribute it and/or modify it
-under the terms of the GNU General Public License as published by the
-Free Software Foundation; either version 2 of the License, or (at your
-option) any later version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
-more details.
-
-You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc.,
-59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+This Source Code Form is subject to the terms of the Mozilla Public License,
+v. 2.0. If a copy of the MPL was not distributed with this file, You can
+obtain one at http://mozilla.org/MPL/2.0/.
 ----------------------------------------------------------------------------
-http://www.direct-netware.de/redirect.php?licenses;gpl
+http://www.direct-netware.de/redirect.php?licenses;mpl2
 ----------------------------------------------------------------------------
 #echo(pasCompleteServerVersion)#
 pas/#echo(__FILEPATH__)#
@@ -50,6 +37,7 @@ NOTE_END //n"""
 
 from os import path
 from threading import local,RLock,Thread
+from time import sleep as time_sleep
 import asyncore,os,stat,socket,sys
 
 from de.direct_netware.classes.pas_globals import direct_globals
@@ -74,8 +62,8 @@ of requests transparently.
 @package    pas_complete
 @subpackage server
 @since      v0.1.00
-@license    http://www.direct-netware.de/redirect.php?licenses;gpl
-            GNU General Public License 2
+@license    http://www.direct-netware.de/redirect.php?licenses;mpl2
+            Mozilla Public License, v. 2.0
 	"""
 
 	active = False
@@ -86,7 +74,7 @@ Listener state
 	"""
 Active counter
 	"""
-	actives_array = [ None ]
+	actives_list = [ None ]
 	"""
 Active queue
 	"""
@@ -114,6 +102,7 @@ Passive queue handler
 	"""
 Passive queue maximum
 	"""
+	stopping_hook = ""
 	synchronized = None
 	"""
 Thread safety lock
@@ -136,6 +125,8 @@ Constructor __init__ (direct_server)
 @param queue_handler Thread to be used for queued connections
 @param threads_queued Allowed queued threads
 @param stream_err Error stream
+@param thread Runs as a new thread
+@param thread_stopping_hook Thread stopping hook definition
 @since v0.1.00
 		"""
 
@@ -151,7 +142,7 @@ Constructor __init__ (direct_server)
 
 		if (issubclass (active_handler,direct_server_thread)): self.active_handler = active_handler
 		self.actives = 0
-		self.actives_array = [ None ] * threads_active
+		self.actives_list = [ None ] * threads_active
 		self.actives_max = threads_active
 		if ((queue_handler != None) and (isinstance (queue_handler,direct_server_thread))): self.queue_handler = queue_handler
 		self.queue_max = threads_queued
@@ -160,7 +151,7 @@ Constructor __init__ (direct_server)
 		try:
 		#
 			listener_bind_address = direct_str (listener_bind_address)
-			socket.setdefaulttimeout (int (direct_globals['settings'].get ("pas_socket_data_timeout",5)))
+			socket.setdefaulttimeout (int (direct_globals['settings'].get ("pas_socket_data_timeout",30)))
 
 			if ((listener_type == socket.AF_INET) or (listener_type == socket.AF_INET6)):
 			#
@@ -186,7 +177,7 @@ Constructor __init__ (direct_server)
 				try:
 				#
 					f_chmod = 0
-					f_chmod_value= int (direct_globals['settings'].get ("pas_chmod_unix_sockets",600),8)
+					f_chmod_value= int (direct_globals['settings'].get ("pas_chmod_unix_sockets","600"),8)
 
 					if ((1000 & f_chmod_value) == 1000): f_chmod |= stat.S_ISVTX
 					if ((2000 & f_chmod_value) == 2000): f_chmod |= stat.S_ISGID
@@ -222,6 +213,8 @@ Constructor __init__ (direct_server)
 		if ((thread) and (thread_stopping_hook != None)):
 		#
 			direct_plugin_hooks.register (thread_stopping_hook,self.thread_stop_listener)
+			self.stopping_hook = thread_stopping_hook
+
 			self.start_listener ()
 			self.run ()
 		#
@@ -243,13 +236,13 @@ call for the local endpoint.
 
 		if (self.active):
 		#
+			self.synchronized.release ()
+
 			try:
 			#
 				f_remote_socket = self.accept ()
 
 				if (f_remote_socket != None): f_id = self.active_queue (f_remote_socket[0])
-				self.synchronized.release ()
-
 				if (f_remote_socket != None): self.active_activate (f_id,f_remote_socket[0])
 			#
 			except dNGServerDeactivation as f_handled_exception:
@@ -357,7 +350,7 @@ Run the main loop for this server instance.
 		if (self.debug != None): self.debug.append ("#echo(__FILEPATH__)# -server.run ()- (#echo(__LINE__)#)")
 
 		self.thread_local_check ()
-		asyncore.loop (map = self.local.sockets)
+		asyncore.loop (5,map = self.local.sockets)
 	#
 
 	def writable (self):
@@ -422,7 +415,7 @@ the passive queue.
 		#
 			self.synchronized.release ()
 
-			while (f_return < 0):
+			while (f_return == -1):
 			#
 				f_return = -1
 
@@ -430,16 +423,11 @@ the passive queue.
 
 				for f_i in range (self.actives_max):
 				#
-					if ((f_return < 0) and (self.actives_array[f_i] == None)):
+					if ((f_return < 0) and (self.actives_list[f_i] == None)):
 					#
-						if (self.actives_array[f_i] == None): f_return = f_i
-						elif (not self.actives_array[f_i].is_alive ()): f_return = f_i
-
-						if (f_return > -1):
-						#
-							self.actives_array[f_i] = py_socket
-							break
-						#
+						f_return = f_i
+						self.actives_list[f_i] = py_socket
+						break
 					#
 				#
 
@@ -471,6 +459,8 @@ the passive queue.
 					self.synchronized.release ()
 				#
 				else: self.actives += 1
+
+				if (f_return == -1): time_sleep (0.1)
 			#
 		#
 		else: self.synchronized.release ()
@@ -490,7 +480,7 @@ Unqueue the given ID from the active queue.
 		if (self.debug != None): self.debug.append ("#echo(__FILEPATH__)# -server.active_unqueue ({0:d})- (#echo(__LINE__)#)".format (id))
 
 		self.synchronized.acquire ()
-		if (self.unqueue (self.actives_array,id)): self.actives -= 1
+		if (self.unqueue (self.actives_list,id)): self.actives -= 1
 		self.synchronized.release ()
 	#
 
@@ -506,15 +496,19 @@ Unqueue all entries from the active queue (canceling running processes).
 		if (self.debug != None): self.debug.append ("#echo(__FILEPATH__)# -server.active_unqueue_all ()- (#echo(__LINE__)#)")
 
 		self.synchronized.acquire ()
+		self.actives = 0
 
-		for f_i in range (self.actives_max):
+		if (self.actives_list != None):
 		#
-			if (self.actives_array[f_i] != None): self.unqueue (self.actives_array,f_i)
+			for f_i in range (self.actives_max):
+			#
+				if (self.actives_list[f_i] != None): self.unqueue (self.actives_list,f_i)
+			#
+
+			self.actives_list = None
 		#
 
 		self.synchronized.release ()
-
-		self.actives = 0
 	#
 
 	def get_status (self):
@@ -610,6 +604,9 @@ Stops the listener and unqueues all running sockets.
 		if (self.active):
 		#
 			self.active = False
+			if ((self.stopping_hook != None) and (len (self.stopping_hook) > 0)): direct_plugin_hooks.unregister (self.stopping_hook,self.thread_stop_listener)
+			self.stopping_hook = ""
+
 			self.synchronized.release ()
 
 			try: self.close ()
@@ -666,17 +663,13 @@ Unqueues a previously active socket connection.
 		if (self.debug != None): self.debug.append ("#echo(__FILEPATH__)# -server.unqueue (queue,{0:d})- (#echo(__LINE__)#)".format (id))
 		f_return = False
 
-		if (queue[id] != None):
+		if ((queue != None) and (queue[id] != None)):
 		#
 			f_return = True
 			f_socket = queue[id]
 			queue[id] = None
 
-			try:
-			#
-				f_socket.shutdown (socket.SHUT_RD)
-				f_socket.close ()
-			#
+			try: f_socket.close ()
 			except socket.error: pass
 		#
 

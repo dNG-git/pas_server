@@ -1,4 +1,5 @@
 _extras
 .*
+make*.py*
 nbproject
 server.*

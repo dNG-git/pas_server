@@ -13,8 +13,8 @@ de.direct_netware.thread.pas_server_thread
 @package    pas_complete
 @subpackage server
 @since      v0.1.00
-@license    http://www.direct-netware.de/redirect.php?licenses;gpl
-            GNU General Public License 2
+@license    http://www.direct-netware.de/redirect.php?licenses;mpl2
+            Mozilla Public License, v. 2.0
 """
 """n// NOTE
 ----------------------------------------------------------------------------
@@ -24,30 +24,18 @@ Python Application Services
 (C) direct Netware Group - All rights reserved
 http://www.direct-netware.de/redirect.php?pas
 
-The following license agreement remains valid unless any additions or
-changes are being made by direct Netware Group in a written form.
-
-This program is free software; you can redistribute it and/or modify it
-under the terms of the GNU General Public License as published by the
-Free Software Foundation; either version 2 of the License, or (at your
-option) any later version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
-more details.
-
-You should have received a copy of the GNU General Public License along with
-this program; if not, write to the Free Software Foundation, Inc.,
-59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+This Source Code Form is subject to the terms of the Mozilla Public License,
+v. 2.0. If a copy of the MPL was not distributed with this file, You can
+obtain one at http://mozilla.org/MPL/2.0/.
 ----------------------------------------------------------------------------
-http://www.direct-netware.de/redirect.php?licenses;gpl
+http://www.direct-netware.de/redirect.php?licenses;mpl2
 ----------------------------------------------------------------------------
 #echo(pasCompleteServerVersion)#
 pas/#echo(__FILEPATH__)#
 ----------------------------------------------------------------------------
 NOTE_END //n"""
 
+from select import select
 from socket import error as socket_error
 from threading import Thread
 import time
@@ -66,8 +54,8 @@ Active thread for the "direct_server" infrastructure.
 @package    pas_complete
 @subpackage server
 @since      v0.1.00
-@license    http://www.direct-netware.de/redirect.php?licenses;gpl
-            GNU General Public License 2
+@license    http://www.direct-netware.de/redirect.php?licenses;mpl2
+            Mozilla Public License, v. 2.0
 	"""
 
 	active_id = -1
@@ -76,7 +64,7 @@ Queue ID
 	"""
 	data = ""
 	"""
-Daat buffer
+Data buffer
 	"""
 	debug = None
 	"""
@@ -86,7 +74,11 @@ Debug message container
 	"""
 Server instance
 	"""
-	timeout = 5
+	socket = None
+	"""
+Socket instance
+	"""
+	timeout = 30
 	"""
 Request timeout value
 	"""
@@ -110,8 +102,8 @@ Constructor __init__ (direct_server_thread)
 
 		if (self.debug != None): self.debug.append ("#echo(__FILEPATH__)# -server_thread.__init__ (direct_server_thread)- (#echo(__LINE__)#)")
 
-		if ("pas_socket_data_timeout" in direct_globals['settings']): self.timeout = direct_globals['settings']['pas_socket_data_timeout']
-		else: self.timeout = 5
+		try: self.timeout = int (direct_globals['settings'].get ("pas_socket_data_timeout",30))
+		except ValueError: self.timeout = 30
 	#
 
 	def get_data (self,size = 0,force_size = False):
@@ -131,6 +123,8 @@ Returns data read from the socket.
 
 		while (((f_data == None) or ((force_size) and (f_data_size < size))) and (f_timeout_time > (time.time ()))):
 		#
+			select ([ self.socket.fileno () ],[ ],[ ],self.timeout)
+
 			try:
 			#
 				f_data = self.socket.recv (size)
