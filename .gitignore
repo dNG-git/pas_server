@@ -1,5 +1,7 @@
 _extras
+__py*
 .*
+.pyc
 make*.py*
 nbproject
 server.*

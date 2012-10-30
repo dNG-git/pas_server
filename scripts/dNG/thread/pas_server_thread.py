@@ -2,7 +2,7 @@
 ##j## BOF
 
 """
-de.direct_netware.thread.pas_server_thread
+dNG.thread.pas_server_thread
 
 @internal   We are using epydoc (JavaDoc style) to automate the
             documentation process for creating the Developer's Manual.
@@ -40,9 +40,9 @@ from socket import error as socket_error
 from threading import Thread
 import time
 
-from de.direct_netware.classes.pas_globals import direct_globals
-from de.direct_netware.classes.pas_logger import direct_logger
-from de.direct_netware.classes.pas_pythonback import *
+from dNG.classes.pas_globals import direct_globals
+from dNG.classes.pas_logger import direct_logger
+from dNG.classes.pas_pythonback import *
 
 class direct_server_thread (Thread):
 #

@@ -2,7 +2,7 @@
 ##j## BOF
 
 """
-de.direct_netware.classes.exception.dNGServerDeactivation
+dNG.classes.exception.dNGServerDeactivation
 
 @internal   We are using epydoc (JavaDoc style) to automate the
             documentation process for creating the Developer's Manual.
@@ -35,7 +35,7 @@ pas/#echo(__FILEPATH__)#
 ----------------------------------------------------------------------------
 NOTE_END //n"""
 
-from de.direct_netware.classes.exception.dNGException import dNGException
+from dNG.classes.exception.dNGException import dNGException
 
 class dNGServerDeactivation (dNGException):
 #
