@@ -548,7 +548,9 @@ Stops the listener and unqueues all running sockets.
 
 		if (self.active):
 		#
+			asyncore.close_all()
 			self.active = False
+
 			if (self.stopping_hook != None and len(self.stopping_hook) > 0): direct_hooks.unregister(self.stopping_hook, self.thread_stop)
 			self.stopping_hook = ""
 

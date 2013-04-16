@@ -30,6 +30,7 @@ import time
 from dNG.pas.data.settings import direct_settings
 from dNG.pas.module.named_loader import direct_named_loader
 from dNG.pas.pythonback import *
+from .shutdown_exception import direct_shutdown_exception
 
 class direct_handler(Thread):
 #
@@ -162,6 +163,7 @@ Placeholder "run()" method calling "thread_run()". Do not override.
 		"""
 
 		try: self.thread_run()
+		except direct_shutdown_exception: self.server.stop()
 		except Exception as handled_exception:
 		#
 			if (self.log_handler != None): self.log_handler.error(handled_exception)
