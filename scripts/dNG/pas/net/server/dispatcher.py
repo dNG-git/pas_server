@@ -24,8 +24,7 @@ http://www.direct-netware.de/redirect.py?licenses;mpl2
 NOTE_END //n"""
 
 from os import path
-from threading import local, RLock, Thread
-from time import sleep as time_sleep
+from threading import local, BoundedSemaphore, RLock, Thread
 import asyncore, os, stat, socket
 
 from dNG.pas.data.settings import direct_settings
@@ -76,17 +75,13 @@ Listener state
 		"""
 Active queue handler
 		"""
-		self.actives = 0
+		self.actives = BoundedSemaphore(threads_active)
 		"""
 Active counter
 		"""
-		self.actives_list = [ None ] * threads_active
+		self.actives_list = [ ]
 		"""
 Active queue
-		"""
-		self.actives_max = threads_active
-		"""
-Active queue maximum
 		"""
 		self.listener_handle_connections = (listener_socket.family == socket.SOCK_STREAM)
 		"""
@@ -142,7 +137,7 @@ Destructor __del__(direct_dispatcher)
 		if (self.log_handler != None): self.log_handler.return_instance()
 	#
 
-	def active_activate(self, id, py_socket):
+	def active_activate(self, py_socket):
 	#
 		"""
 Unqueue the given ID from the active queue.
@@ -150,24 +145,15 @@ Unqueue the given ID from the active queue.
 :param id: Queue ID
 :param py_socket: Active socket resource
 
-:since: v0.1.00
+:access: protected
+:since:  v0.1.00
 		"""
 
-		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -dispatcher.active_activate({0:d}, py_socket)- (#echo(__LINE__)#)".format (id))
+		handler = self.active_handler()
+		handler.set_instance_data(self, py_socket)
+		handler.start()
 
-		if (id >= 0):
-		#
-			handler = self.active_handler()
-			handler.set_instance_data(self, py_socket, id)
-			handler.start()
-
-			if (self.log_handler != None): self.log_handler.debug("pas.server started a new thread: {0:d} for {1!r}".format(id, handler))
-		#
-		elif (id == -1 and self.listener_handle_connections and (not self.active)):
-		#
-			try: py_socket.close()
-			except: pass
-		#
+		if (self.log_handler != None): self.log_handler.debug("pas.server started a new thread '{0!r}'".format(handler))
 	#
 
 	def active_queue(self, py_socket):
@@ -182,69 +168,37 @@ the passive queue.
 :since:  v0.1.00
 		"""
 
-		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -dispatcher.active_queue(py_socket)- (#echo(__LINE__)#)")
-		var_return = -1
-
-		self.synchronized.acquire()
+		var_return = False
 
 		if (self.active):
 		#
-			self.synchronized.release()
-
-			while (var_return == -1):
+			if (self.actives.acquire(self.queue_handler == None)):
 			#
-				var_return = -1
-
 				self.synchronized.acquire()
 
-				for i in range(self.actives_max):
+				if (self.active):
 				#
-					if (var_return < 0 and self.actives_list[i] == None):
-					#
-						self.actives_list[i] = py_socket
-						var_return = i
-
-						break
-					#
+					self.actives_list.append(py_socket)
+					var_return = True
 				#
+				else: self.actives.release()
 
 				self.synchronized.release()
+			#
+			else:
+			#
+				handler = self.queue_handler()
+				handler.set_instance_data(self, py_socket)
+				handler.start()
 
-				if (var_return < 0):
-				#
-					self.synchronized.acquire()
-
-					if (self.queue_handler != None and self.waiting < self.queue_max):
-					#
-						try:
-						#
-							handler = self.queue_handler()
-							handler.set_instance_data(self, py_socket)
-							handler.start()
-
-							self.waiting += 1
-							var_return = -2
-						#
-						except Exception as handled_exception:
-						#
-							if (self.log_handler != None): self.log_handler.error(handled_exception)
-							var_return = -1
-						#
-					#
-
-					self.synchronized.release()
-				#
-				else: self.actives += 1
-
-				if (var_return == -1): time_sleep(0.1)
+				self.waiting += 1
 			#
 		#
-		else: self.synchronized.release()
 
 		return var_return
 	#
 
-	def active_unqueue(self, id):
+	def active_unqueue(self, py_socket):
 	#
 		"""
 Unqueue the given ID from the active queue.
@@ -254,11 +208,7 @@ Unqueue the given ID from the active queue.
 :since: v0.1.00
 		"""
 
-		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -dispatcher.active_unqueue({0:d})- (#echo(__LINE__)#)".format (id))
-
-		self.synchronized.acquire()
-		if (self.unqueue(self.actives_list, id)): self.actives -= 1
-		self.synchronized.release()
+		if (self.unqueue(self.actives_list, py_socket)): self.actives.release()
 	#
 
 	def active_unqueue_all(self):
@@ -269,19 +219,14 @@ Unqueue all entries from the active queue (canceling running processes).
 :since: v0.1.00
 		"""
 
-		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -dispatcher.active_unqueue_all()- (#echo(__LINE__)#)")
-
 		self.synchronized.acquire()
-		self.actives = 0
 
 		if (self.actives_list != None):
 		#
-			for i in range(self.actives_max):
+			for py_socket in self.actives_list:
 			#
-				if (self.actives_list[i] != None): self.unqueue(self.actives_list, i)
+				if (self.unqueue(self.actives_list, py_socket)): self.actives.release()
 			#
-
-			self.actives_list = None
 		#
 
 		self.synchronized.release()
@@ -296,13 +241,7 @@ Return the socket status.
 :since:  v0.1.00
 		"""
 
-		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -dispatcher.get_status()- (#echo(__LINE__)#)")
-
-		self.synchronized.acquire()
-		var_return = self.active
-		self.synchronized.release()
-
-		return var_return
+		return self.active
 	#
 
 	def handle_accept(self):
@@ -315,18 +254,12 @@ call for the local endpoint.
 :since: v0.1.00
 		"""
 
-		self.synchronized.acquire()
-
 		if (self.active and self.listener_handle_connections):
 		#
-			self.synchronized.release()
-
 			try:
 			#
 				var_socket = self.accept()
-
-				if (var_socket != None): id = self.active_queue(var_socket[0])
-				if (var_socket != None): self.active_activate(id, var_socket[0])
+				if (self.active_queue(var_socket[0])): self.active_activate(var_socket[0])
 			#
 			except direct_shutdown_exception as handled_exception:
 			#
@@ -341,7 +274,6 @@ call for the local endpoint.
 				else: self.log_handler.error(handled_exception)
 			#
 		#
-		else: self.synchronized.release()
 	#
 
 	def handle_close(self):
@@ -352,15 +284,7 @@ python.org: Called when the socket is closed.
 :since: v0.1.00
 		"""
 
-		self.synchronized.acquire()
-
-		if (self.active):
-		#
-			self.synchronized.release()
-
-			self.stop()
-		#
-		else: self.synchronized.release()
+		if (self.active): self.stop()
 	#
 
 	def handle_connect(self):
@@ -394,18 +318,11 @@ on the channel's socket will succeed.
 :since: v0.1.00
 		"""
 
-		self.synchronized.acquire()
-
-		if ((not self.listener_handle_connections) and self.active and self.actives < 1):
+		if ((not self.listener_handle_connections) and self.active):
 		#
-			id = None
-
 			try:
 			#
-				id = self.active_queue(self.listener_socket)
-				self.synchronized.release()
-
-				self.active_activate(id, self.listener_socket)
+				if (self.active_queue(self.listener_socket)): self.active_activate(self.listener_socket)
 			#
 			except Exception as handled_exception:
 			#
@@ -435,14 +352,7 @@ rarely used.
 :since: v0.1.00
 		"""
 
-		self.synchronized.acquire()
-
-		if (self.active):
-		#
-			self.active_unqueue_all()
-			self.synchronized.release()
-		#
-		else: self.synchronized.release()
+		if (self.active): self.active_unqueue_all()
 	#
 
 	def start(self):
@@ -487,19 +397,27 @@ Run the main loop for this server instance.
 			self.synchronized.release()
 
 			self.add_channel(self.local.sockets)
-			asyncore.loop(5)
+			asyncore.loop(5, map = self.local.sockets)
 		#
 		except direct_shutdown_exception as handled_exception:
 		#
-			exception = handled_exception.get_cause()
+			if (self.active):
+			#
+				exception = handled_exception.get_cause()
+				if (exception != None and self.log_handler != None): self.log_handler.error(exception)
+			#
 
-			if (exception == None and self.log_handler != None): self.log_handler.error(handled_exception)
-			else: handled_exception.print_stack_trace()
+			self.stop()
 		#
 		except Exception as handled_exception:
 		#
-			if (self.log_handler == None): direct_shutdown_exception.print_current_stack_trace()
-			else: self.log_handler.error(handled_exception)
+			if (self.active):
+			#
+				if (self.log_handler == None): direct_shutdown_exception.print_current_stack_trace()
+				else: self.log_handler.error(handled_exception)
+			#
+
+			self.stop()
 		#
 	#
 
@@ -530,7 +448,6 @@ Sets the log_handler.
 :since: v0.1.00
 		"""
 
-		if (log_handler != None): log_handler.debug("#echo(__FILEPATH__)# -dispatcher.set_log_handler(log_handler)- (#echo(__LINE__)#)")
 		self.log_handler = log_handler
 	#
 
@@ -548,7 +465,6 @@ Stops the listener and unqueues all running sockets.
 
 		if (self.active):
 		#
-			asyncore.close_all()
 			self.active = False
 
 			if (self.stopping_hook != None and len(self.stopping_hook) > 0): direct_hooks.unregister(self.stopping_hook, self.thread_stop)
@@ -595,7 +511,7 @@ Stops the running server instance by a stopping hook call.
 		return None
 	#
 
-	def unqueue(self, queue, id):
+	def unqueue(self, queue, py_socket):
 	#
 		"""
 Unqueues a previously active socket connection.
@@ -607,21 +523,24 @@ Unqueues a previously active socket connection.
 :since:  v0.1.00
 		"""
 
-		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -dispatcher.unqueue(queue, {0:d})- (#echo(__LINE__)#)".format(id))
 		var_return = False
 
-		if (queue != None and queue[id] != None):
+		self.synchronized.acquire()
+
+		if (queue != None and py_socket in queue):
 		#
+			queue.remove(py_socket)
+			self.synchronized.release()
+
 			var_return = True
-			var_socket = queue[id]
-			queue[id] = None
 
 			if (self.listener_handle_connections):
 			#
-				try: var_socket.close()
+				try: py_socket.close()
 				except: pass
 			#
 		#
+		else: self.synchronized.release()
 
 		return var_return
 	#

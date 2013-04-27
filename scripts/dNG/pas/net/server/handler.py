@@ -60,6 +60,14 @@ Constructor __init__(direct_handler)
 		"""
 Queue ID
 		"""
+		self.address = None
+		"""
+Address of the received data
+		"""
+		self.address_family = None
+		"""
+Address family of the received data
+		"""
 		self.data = ""
 		"""
 Data buffer
@@ -97,6 +105,40 @@ Destructor __del__(direct_handler)
 		if (self.log_handler != None): self.log_handler.return_instance()
 	#
 
+	def get_address(self, flush = False):
+	#
+		"""
+Returns the address for the data received.
+
+:param flush: True to delete the cached address after returning it.
+
+:return: (mixed) Address data based on socket family
+:since:  v0.1.00
+		"""
+
+		var_return = self.address
+
+		if (flush):
+		#
+			self.address = None
+			self.address_family = None
+		#
+
+		return var_return
+	#
+
+	def get_address_family(self):
+	#
+		"""
+Returns the socket family for the address returned by "get_address()".
+
+:return: (int) Socket family
+:since:  v0.1.00
+		"""
+
+		return self.address_family
+	#
+
 	def get_data(self, size, force_size = False):
 	#
 		"""
@@ -105,7 +147,6 @@ Returns data read from the socket.
 :since: v0.1.00
 		"""
 
-		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -handler.get_data({0:d}, force_size)- (#echo(__LINE__)#)".format(size))
 		var_return = None
 
 		data = None
@@ -117,7 +158,13 @@ Returns data read from the socket.
 			while ((data == None or (force_size and data_size < size)) and time.time() < timeout_time):
 			#
 				select([ self.socket.fileno() ], [ ], [ ], self.timeout)
-				data = self.socket.recv(size)
+
+				if (self.address == None):
+				#
+					( data, self.address ) = self.socket.recvfrom(size)
+					self.address_family = self.socket.family
+				#
+				else: data = self.socket.recv(size)
 
 				if (len(data) > 0):
 				#
@@ -145,11 +192,10 @@ Returns data read from the socket.
 Sets data returned next time "get_data()" is called. It is placed in front of
 the data buffer.
 
-:access: restricted
+:access: protected
 :since:  v0.1.00
 		"""
 
-		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -handler.set_data(data)- (#echo(__LINE__)#)")
 		self.data = (direct_str(data) + self.data)
 	#
 
@@ -158,7 +204,7 @@ the data buffer.
 		"""
 Placeholder "run()" method calling "thread_run()". Do not override.
 
-:access: restricted
+:access: protected
 :since:  v0.1.00
 		"""
 
@@ -169,10 +215,10 @@ Placeholder "run()" method calling "thread_run()". Do not override.
 			if (self.log_handler != None): self.log_handler.error(handled_exception)
 		#
 
-		self.server.active_unqueue(self.active_id)
+		self.server.active_unqueue(self.socket)
 	#
 
-	def set_instance_data(self, server, socket, id = -1):
+	def set_instance_data(self, server, socket):
 	#
 		"""
 Sets relevant instance data for this thread and address connection.
@@ -185,16 +231,10 @@ Sets relevant instance data for this thread and address connection.
 :since:  v0.1.00
 		"""
 
-		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -handler.set_instance_data(server, socket, {0:d})- (#echo(__LINE__)#)".format(id))
-
-		self.active_id = id
 		self.server = server
 
 		self.socket = socket
 		self.socket.settimeout(self.timeout)
-
-		if (id < 0): return -1
-		else: return True
 	#
 
 	def set_log_handler(self, log_handler):
@@ -207,7 +247,6 @@ Sets the log_handler.
 :since: v0.1.00
 		"""
 
-		if (log_handler != None): log_handler.debug("#echo(__FILEPATH__)# -handler.set_log_handler(log_handler)- (#echo(__LINE__)#)")
 		self.log_handler = log_handler
 	#
 
@@ -216,14 +255,14 @@ Sets the log_handler.
 		"""
 Placeholder "thread_run()" method doing nothing.
 
-:access: restricted
+:access: protected
 :since:  v0.1.00
 		"""
 
 		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -handler->thread_run()- (#echo(__LINE__)#)")
 	#
 
-	def write_data (self,data):
+	def write_data(self, data):
 	#
 		"""
 Write data to the socket.
@@ -234,7 +273,6 @@ Write data to the socket.
 :since:  v1.0.0
 		"""
 
-		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -handler.write_data(data)- (#echo(__LINE__)#)")
 		var_return = True
 
 		data = direct_bytes(data)
