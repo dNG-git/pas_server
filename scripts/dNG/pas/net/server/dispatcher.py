@@ -508,7 +508,7 @@ Stops the running server instance by a stopping hook call.
 		"""
 
 		self.stop()
-		return None
+		return last_return
 	#
 
 	def unqueue(self, queue, py_socket):
