@@ -27,10 +27,10 @@ from os import path
 from threading import local, BoundedSemaphore, RLock, Thread
 import asyncore, os, stat, socket
 
+from dNG.pas.data.binary import direct_binary
 from dNG.pas.data.settings import direct_settings
 from dNG.pas.module.named_loader import direct_named_loader
 from dNG.pas.plugins.hooks import direct_hooks
-from dNG.pas.pythonback import direct_str
 from .handler import direct_handler
 from .shutdown_exception import direct_shutdown_exception
 
@@ -174,16 +174,15 @@ the passive queue.
 		#
 			if (self.actives.acquire(self.queue_handler == None)):
 			#
-				self.synchronized.acquire()
-
-				if (self.active):
+				with self.synchronized:
 				#
-					self.actives_list.append(py_socket)
-					var_return = True
+					if (self.active):
+					#
+						self.actives_list.append(py_socket)
+						var_return = True
+					#
+					else: self.actives.release()
 				#
-				else: self.actives.release()
-
-				self.synchronized.release()
 			#
 			else:
 			#
@@ -219,17 +218,16 @@ Unqueue all entries from the active queue (canceling running processes).
 :since: v0.1.00
 		"""
 
-		self.synchronized.acquire()
-
-		if (self.actives_list != None):
+		with self.synchronized:
 		#
-			for py_socket in self.actives_list:
+			if (self.actives_list != None):
 			#
-				if (self.unqueue(self.actives_list, py_socket)): self.actives.release()
+				for py_socket in self.actives_list:
+				#
+					if (self.unqueue(self.actives_list, py_socket)): self.actives.release()
+				#
 			#
 		#
-
-		self.synchronized.release()
 	#
 
 	def get_status(self):
@@ -297,16 +295,11 @@ negotiation with the remote endpoint, for example.
 :since: v0.1.00
 		"""
 
-		self.synchronized.acquire()
-
 		if (self.active):
 		#
 			try: self.listen(self.queue_max)
 			except: direct_shutdown_exception.print_current_stack_trace()
-
-			self.synchronized.release()
 		#
-		else: self.synchronized.release()
 	#
 
 	def handle_read(self):
@@ -326,8 +319,6 @@ on the channel's socket will succeed.
 			#
 			except Exception as handled_exception:
 			#
-				if (id == None): self.synchronized.release()
-
 				if (isinstance(handled_exception, direct_shutdown_exception)):
 				#
 					exception = handled_exception.get_cause()
@@ -339,7 +330,6 @@ on the channel's socket will succeed.
 				else: self.log_handler.error(handled_exception)
 			#
 		#
-		else: self.synchronized.release()
 	#
 
 	def handle_expt(self):
@@ -386,15 +376,14 @@ Run the main loop for this server instance.
 
 		try:
 		#
-			self.synchronized.acquire()
-
-			if (not self.active):
+			with self.synchronized:
 			#
-				if (self.listener_handle_connections): self.listen(self.queue_max)
-				self.active = True
+				if (not self.active):
+				#
+					if (self.listener_handle_connections): self.listen(self.queue_max)
+					self.active = True
+				#
 			#
-
-			self.synchronized.release()
 
 			self.add_channel(self.local.sockets)
 			asyncore.loop(5, map = self.local.sockets)
@@ -433,9 +422,10 @@ Sets the status for the listener.
 
 		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -dispatcher.set_active(status)- (#echo(__LINE__)#)")
 
-		self.synchronized.acquire()
-		if (self.active != status): self.active = status
-		self.synchronized.release()
+		with self.synchronized:
+		#
+			if (self.active != status): self.active = status
+		#
 	#
 
 	def set_log_handler(self, log_handler):
@@ -489,8 +479,6 @@ sure that these variables are defined.
 :since: v0.1.00
 		"""
 
-		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -dispatcher.thread_local_check()- (#echo(__LINE__)#)")
-
 		if (self.local == None): self.local = local()
 		if (not hasattr(self.local, "sockets")): self.local.sockets = { }
 	#
@@ -506,6 +494,8 @@ Stops the running server instance by a stopping hook call.
 :return: (mixed) Return value
 :since:  v1.0.0
 		"""
+
+		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -dispatcher.thread_stop()- (#echo(__LINE__)#)")
 
 		self.stop()
 		return last_return
@@ -576,7 +566,7 @@ Prepare socket returns a bound socket for the given listener data.
 
 		if (listener_type == socket.AF_INET or listener_type == socket.AF_INET6):
 		#
-			listener_data[0] = direct_str(listener_data[0])
+			listener_data[0] = direct_binary.str(listener_data[0])
 			listener_data = ( listener_data[0], listener_data[1] )
 
 			var_return = socket.socket(listener_type, socket.SOCK_STREAM)
@@ -586,7 +576,7 @@ Prepare socket returns a bound socket for the given listener data.
 		#
 		elif (listener_type == socket.AF_UNIX):
 		#
-			unixsocket_pathname = path.normpath(direct_str(listener_data[0]))
+			unixsocket_pathname = path.normpath(direct_binary.str(listener_data[0]))
 			if (os.access(unixsocket_pathname, os.F_OK)): os.unlink(unixsocket_pathname)
 
 			var_return = socket.socket(listener_type, socket.SOCK_STREAM)

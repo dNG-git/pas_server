@@ -27,9 +27,9 @@ from select import select
 from threading import Thread
 import time
 
+from dNG.pas.data.binary import direct_binary
 from dNG.pas.data.settings import direct_settings
 from dNG.pas.module.named_loader import direct_named_loader
-from dNG.pas.pythonback import *
 from .shutdown_exception import direct_shutdown_exception
 
 class direct_handler(Thread):
@@ -85,13 +85,12 @@ Server instance
 		"""
 Socket instance
 		"""
-		self.timeout = 30
+		self.timeout = int(direct_settings.get("pas_server_socket_data_timeout", 0))
 		"""
 Request timeout value
 		"""
 
-		try: self.timeout = int(direct_settings.get("pas_server_socket_data_timeout", 30))
-		except ValueError: self.timeout = 30
+		if (self.timeout < 1): self.timeout = int(direct_settings.get("pas_global_socket_data_timeout", 30))
 	#
 
 	def __del__(self):
@@ -168,8 +167,8 @@ Returns data read from the socket.
 
 				if (len(data) > 0):
 				#
-					self.data += direct_str(data)
-					data_size = len(direct_bytes(data))
+					self.data += direct_binary.raw_str(data)
+					data_size = len(direct_binary.bytes(data))
 				#
 				else: data = None
 			#
@@ -196,7 +195,7 @@ the data buffer.
 :since:  v0.1.00
 		"""
 
-		self.data = (direct_str(data) + self.data)
+		self.data = (direct_binary.str(data) + self.data)
 	#
 
 	def run(self):
@@ -275,7 +274,7 @@ Write data to the socket.
 
 		var_return = True
 
-		data = direct_bytes(data)
+		data = direct_binary.bytes(data)
 
 		if (len(data) > 0):
 		#
