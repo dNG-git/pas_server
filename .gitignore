@@ -4,4 +4,4 @@ __py*
 .pyc
 make*.py*
 nbproject
-server.*
+pas_server.*

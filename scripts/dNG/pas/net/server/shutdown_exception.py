@@ -2,7 +2,7 @@
 ##j## BOF
 
 """
-dNG.pas.net.server.shutdown_exception
+dNG.pas.net.server.ShutdownException
 """
 """n// NOTE
 ----------------------------------------------------------------------------
@@ -23,13 +23,12 @@ http://www.direct-netware.de/redirect.py?licenses;mpl2
 ----------------------------------------------------------------------------
 NOTE_END //n"""
 
-from dNG.pas.data.exception import direct_exception
+from dNG.pas.data.traced_exception import TracedException
 
-class direct_shutdown_exception(direct_exception):
+class ShutdownException(TracedException):
 #
 	"""
-The "direct_shutdown_exception" class is used to stop running server
-threads.
+The "ShutdownException" class is used to stop running server threads.
 
 :author:     direct Netware Group
 :copyright:  (C) direct Netware Group - All rights reserved

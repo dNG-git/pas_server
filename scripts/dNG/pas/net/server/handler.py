@@ -2,7 +2,7 @@
 ##j## BOF
 
 """
-dNG.pas.net.server.handler
+dNG.pas.net.server.Handler
 """
 """n// NOTE
 ----------------------------------------------------------------------------
@@ -27,12 +27,12 @@ from select import select
 from threading import Thread
 import time
 
-from dNG.pas.data.binary import direct_binary
-from dNG.pas.data.settings import direct_settings
-from dNG.pas.module.named_loader import direct_named_loader
-from .shutdown_exception import direct_shutdown_exception
+from dNG.pas.data.binary import Binary
+from dNG.pas.data.settings import Settings
+from dNG.pas.module.named_loader import NamedLoader
+from .shutdown_exception import ShutdownException
 
-class direct_handler(Thread):
+class Handler(Thread):
 #
 	"""
 Active thread for the dNG server infrastructure.
@@ -49,7 +49,7 @@ Active thread for the dNG server infrastructure.
 	def __init__(self):
 	#
 		"""
-Constructor __init__(direct_handler)
+Constructor __init__(Handler)
 
 :since: v0.1.00
 		"""
@@ -72,7 +72,7 @@ Address family of the received data
 		"""
 Data buffer
 		"""
-		self.log_handler = direct_named_loader.get_singleton("dNG.pas.data.logging.log_handler", False)
+		self.log_handler = NamedLoader.get_singleton("dNG.pas.data.logging.LogHandler", False)
 		"""
 The log_handler is called whenever debug messages should be logged or errors
 happened.
@@ -85,18 +85,18 @@ Server instance
 		"""
 Socket instance
 		"""
-		self.timeout = int(direct_settings.get("pas_server_socket_data_timeout", 0))
+		self.timeout = int(Settings.get("pas_server_socket_data_timeout", 0))
 		"""
 Request timeout value
 		"""
 
-		if (self.timeout < 1): self.timeout = int(direct_settings.get("pas_global_socket_data_timeout", 30))
+		if (self.timeout < 1): self.timeout = int(Settings.get("pas_global_socket_data_timeout", 30))
 	#
 
 	def __del__(self):
 	#
 		"""
-Destructor __del__(direct_handler)
+Destructor __del__(Handler)
 
 :since: v0.1.00
 		"""
@@ -167,8 +167,8 @@ Returns data read from the socket.
 
 				if (len(data) > 0):
 				#
-					self.data += direct_binary.raw_str(data)
-					data_size = len(direct_binary.bytes(data))
+					self.data += Binary.raw_str(data)
+					data_size = len(Binary.bytes(data))
 				#
 				else: data = None
 			#
@@ -195,7 +195,7 @@ the data buffer.
 :since:  v0.1.00
 		"""
 
-		self.data = (direct_binary.str(data) + self.data)
+		self.data = (Binary.str(data) + self.data)
 	#
 
 	def run(self):
@@ -208,7 +208,7 @@ Placeholder "run()" method calling "thread_run()". Do not override.
 		"""
 
 		try: self.thread_run()
-		except direct_shutdown_exception: self.server.stop()
+		except ShutdownException: self.server.stop()
 		except Exception as handled_exception:
 		#
 			if (self.log_handler != None): self.log_handler.error(handled_exception)
@@ -274,7 +274,7 @@ Write data to the socket.
 
 		var_return = True
 
-		data = direct_binary.bytes(data)
+		data = Binary.bytes(data)
 
 		if (len(data) > 0):
 		#

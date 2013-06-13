@@ -2,7 +2,7 @@
 ##j## BOF
 
 """
-dNG.pas.net.server.dispatcher
+dNG.pas.net.server.Dispatcher
 """
 """n// NOTE
 ----------------------------------------------------------------------------
@@ -27,14 +27,14 @@ from os import path
 from threading import local, BoundedSemaphore, RLock, Thread
 import asyncore, os, stat, socket
 
-from dNG.pas.data.binary import direct_binary
-from dNG.pas.data.settings import direct_settings
-from dNG.pas.module.named_loader import direct_named_loader
-from dNG.pas.plugins.hooks import direct_hooks
-from .handler import direct_handler
-from .shutdown_exception import direct_shutdown_exception
+from dNG.pas.data.binary import Binary
+from dNG.pas.data.settings import Settings
+from dNG.pas.module.named_loader import NamedLoader
+from dNG.pas.plugins.hooks import Hooks
+from .handler import Handler
+from .shutdown_exception import ShutdownException
 
-class direct_dispatcher(asyncore.dispatcher):
+class Dispatcher(asyncore.dispatcher):
 #
 	"""
 The dNG server infrastructure allows an application to provide active
@@ -53,7 +53,7 @@ of requests transparently.
 	def __init__(self, listener_socket, active_handler, threads_active = 5, queue_handler = None, threads_queued = 10, thread_stopping_hook = None):
 	#
 		"""
-Constructor __init__(direct_dispatcher)
+Constructor __init__(Dispatcher)
 
 :param listener_socket: Listener socket
 :param active_handler: Thread to be used for activated connections
@@ -71,7 +71,7 @@ Constructor __init__(direct_dispatcher)
 		"""
 Listener state
 		"""
-		self.active_handler = (active_handler if (issubclass(active_handler, direct_handler)) else None)
+		self.active_handler = (active_handler if (issubclass(active_handler, Handler)) else None)
 		"""
 Active queue handler
 		"""
@@ -95,12 +95,12 @@ Listener socket
 		"""
 Local data handle
 		"""
-		self.log_handler = direct_named_loader.get_singleton("dNG.pas.data.logging.log_handler", False)
+		self.log_handler = NamedLoader.get_singleton("dNG.pas.data.logging.LogHandler", False)
 		"""
 The log_handler is called whenever debug messages should be logged or errors
 happened.
 		"""
-		self.queue_handler = (queue_handler if (isinstance(queue_handler, direct_handler)) else None)
+		self.queue_handler = (queue_handler if (isinstance(queue_handler, Handler)) else None)
 		"""
 Passive queue handler
 		"""
@@ -129,7 +129,7 @@ Thread safety lock
 	def __del__(self):
 	#
 		"""
-Destructor __del__(direct_dispatcher)
+Destructor __del__(Dispatcher)
 
 :since: v0.1.00
 		"""
@@ -259,7 +259,7 @@ call for the local endpoint.
 				var_socket = self.accept()
 				if (self.active_queue(var_socket[0])): self.active_activate(var_socket[0])
 			#
-			except direct_shutdown_exception as handled_exception:
+			except ShutdownException as handled_exception:
 			#
 				exception = handled_exception.get_cause()
 
@@ -268,7 +268,7 @@ call for the local endpoint.
 			#
 			except Exception as handled_exception:
 			#
-				if (self.log_handler == None): direct_shutdown_exception.print_current_stack_trace()
+				if (self.log_handler == None): ShutdownException.print_current_stack_trace()
 				else: self.log_handler.error(handled_exception)
 			#
 		#
@@ -298,7 +298,7 @@ negotiation with the remote endpoint, for example.
 		if (self.active):
 		#
 			try: self.listen(self.queue_max)
-			except: direct_shutdown_exception.print_current_stack_trace()
+			except: ShutdownException.print_current_stack_trace()
 		#
 	#
 
@@ -319,14 +319,14 @@ on the channel's socket will succeed.
 			#
 			except Exception as handled_exception:
 			#
-				if (isinstance(handled_exception, direct_shutdown_exception)):
+				if (isinstance(handled_exception, ShutdownException)):
 				#
 					exception = handled_exception.get_cause()
 
 					if (exception == None and self.log_handler != None): self.log_handler.error(handled_exception)
 					else: handled_exception.print_stack_trace()
 				#
-				elif (self.log_handler == None): direct_shutdown_exception.print_current_stack_trace()
+				elif (self.log_handler == None): ShutdownException.print_current_stack_trace()
 				else: self.log_handler.error(handled_exception)
 			#
 		#
@@ -371,7 +371,7 @@ Run the main loop for this server instance.
 		if (self.stopping_hook != None):
 		#
 			stopping_hook = ("dNG.pas.status.shutdown" if (self.stopping_hook == "") else self.stopping_hook)
-			direct_hooks.register(stopping_hook, self.thread_stop)
+			Hooks.register(stopping_hook, self.thread_stop)
 		#
 
 		try:
@@ -388,7 +388,7 @@ Run the main loop for this server instance.
 			self.add_channel(self.local.sockets)
 			asyncore.loop(5, map = self.local.sockets)
 		#
-		except direct_shutdown_exception as handled_exception:
+		except ShutdownException as handled_exception:
 		#
 			if (self.active):
 			#
@@ -402,7 +402,7 @@ Run the main loop for this server instance.
 		#
 			if (self.active):
 			#
-				if (self.log_handler == None): direct_shutdown_exception.print_current_stack_trace()
+				if (self.log_handler == None): ShutdownException.print_current_stack_trace()
 				else: self.log_handler.error(handled_exception)
 			#
 
@@ -457,7 +457,7 @@ Stops the listener and unqueues all running sockets.
 		#
 			self.active = False
 
-			if (self.stopping_hook != None and len(self.stopping_hook) > 0): direct_hooks.unregister(self.stopping_hook, self.thread_stop)
+			if (self.stopping_hook != None and len(self.stopping_hook) > 0): Hooks.unregister(self.stopping_hook, self.thread_stop)
 			self.stopping_hook = ""
 
 			self.synchronized.release()
@@ -566,7 +566,7 @@ Prepare socket returns a bound socket for the given listener data.
 
 		if (listener_type == socket.AF_INET or listener_type == socket.AF_INET6):
 		#
-			listener_data[0] = direct_binary.str(listener_data[0])
+			listener_data[0] = Binary.str(listener_data[0])
 			listener_data = ( listener_data[0], listener_data[1] )
 
 			var_return = socket.socket(listener_type, socket.SOCK_STREAM)
@@ -576,7 +576,7 @@ Prepare socket returns a bound socket for the given listener data.
 		#
 		elif (listener_type == socket.AF_UNIX):
 		#
-			unixsocket_pathname = path.normpath(direct_binary.str(listener_data[0]))
+			unixsocket_pathname = path.normpath(Binary.str(listener_data[0]))
 			if (os.access(unixsocket_pathname, os.F_OK)): os.unlink(unixsocket_pathname)
 
 			var_return = socket.socket(listener_type, socket.SOCK_STREAM)
@@ -584,7 +584,7 @@ Prepare socket returns a bound socket for the given listener data.
 			var_return.bind(unixsocket_pathname)
 
 			socket_chmod = 0
-			socket_chmod_value = int(direct_settings.get("pas_server_chmod_unix_sockets", "600"), 8)
+			socket_chmod_value = int(Settings.get("pas_server_chmod_unix_sockets", "600"), 8)
 
 			if ((1000 & socket_chmod_value) == 1000): socket_chmod |= stat.S_ISVTX
 			if ((2000 & socket_chmod_value) == 2000): socket_chmod |= stat.S_ISGID
