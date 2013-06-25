@@ -93,17 +93,6 @@ Request timeout value
 		if (self.timeout < 1): self.timeout = int(Settings.get("pas_global_socket_data_timeout", 30))
 	#
 
-	def __del__(self):
-	#
-		"""
-Destructor __del__(Handler)
-
-:since: v0.1.00
-		"""
-
-		if (self.log_handler != None): self.log_handler.return_instance()
-	#
-
 	def get_address(self, flush = False):
 	#
 		"""

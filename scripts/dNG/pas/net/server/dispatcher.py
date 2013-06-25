@@ -126,17 +126,6 @@ Thread safety lock
 		"""
 	#
 
-	def __del__(self):
-	#
-		"""
-Destructor __del__(Dispatcher)
-
-:since: v0.1.00
-		"""
-
-		if (self.log_handler != None): self.log_handler.return_instance()
-	#
-
 	def active_activate(self, py_socket):
 	#
 		"""
