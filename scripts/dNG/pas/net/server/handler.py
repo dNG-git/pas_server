@@ -104,7 +104,7 @@ Returns the address for the data received.
 :since:  v0.1.00
 		"""
 
-		var_return = self.address
+		_return = self.address
 
 		if (flush):
 		#
@@ -112,7 +112,7 @@ Returns the address for the data received.
 			self.address_family = None
 		#
 
-		return var_return
+		return _return
 	#
 
 	def get_address_family(self):
@@ -135,7 +135,7 @@ Returns data read from the socket.
 :since: v0.1.00
 		"""
 
-		var_return = None
+		_return = None
 
 		data = None
 		data_size = 0
@@ -166,22 +166,21 @@ Returns data read from the socket.
 
 		if (self.data != None and len(self.data) > 0):
 		#
-			var_return = self.data
+			_return = self.data
 			self.data = ""
 		#
 
 		if (force_size and data_size < size): raise OSError("get_data({0:d})".format(size), 5)
-		else: return var_return
+		else: return _return
 	#
 
-	def set_data (self, data):
+	def _set_data(self, data):
 	#
 		"""
 Sets data returned next time "get_data()" is called. It is placed in front of
 the data buffer.
 
-:access: protected
-:since:  v0.1.00
+:since: v0.1.00
 		"""
 
 		self.data = (Binary.str(data) + self.data)
@@ -190,13 +189,12 @@ the data buffer.
 	def run(self):
 	#
 		"""
-Placeholder "run()" method calling "thread_run()". Do not override.
+Placeholder "run()" method calling "_thread_run()". Do not override.
 
-:access: protected
-:since:  v0.1.00
+:since: v0.1.00
 		"""
 
-		try: self.thread_run()
+		try: self._thread_run()
 		except ShutdownException: self.server.stop()
 		except Exception as handled_exception:
 		#
@@ -238,16 +236,15 @@ Sets the log_handler.
 		self.log_handler = log_handler
 	#
 
-	def thread_run (self):
+	def _thread_run(self):
 	#
 		"""
-Placeholder "thread_run()" method doing nothing.
+Placeholder "_thread_run()" method doing nothing.
 
-:access: protected
-:since:  v0.1.00
+:since: v0.1.00
 		"""
 
-		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -handler->thread_run()- (#echo(__LINE__)#)")
+		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -Handler._thread_run()- (#echo(__LINE__)#)")
 	#
 
 	def write_data(self, data):
@@ -261,7 +258,7 @@ Write data to the socket.
 :since:  v1.0.0
 		"""
 
-		var_return = True
+		_return = True
 
 		data = Binary.bytes(data)
 
@@ -271,11 +268,11 @@ Write data to the socket.
 			except Exception as handled_exception:
 			#
 				if (self.log_handler != None): self.log_handler.error(handled_exception)
-				var_return = False
+				_return = False
 			#
 		#
 
-		return var_return
+		return _return
 	#
 #
 

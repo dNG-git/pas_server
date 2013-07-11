@@ -126,38 +126,37 @@ Thread safety lock
 		"""
 	#
 
-	def active_activate(self, py_socket):
+	def _active_activate(self, _socket):
 	#
 		"""
 Unqueue the given ID from the active queue.
 
 :param id: Queue ID
-:param py_socket: Active socket resource
+:param _socket: Active socket resource
 
-:access: protected
-:since:  v0.1.00
+:since: v0.1.00
 		"""
 
 		handler = self.active_handler()
-		handler.set_instance_data(self, py_socket)
+		handler.set_instance_data(self, _socket)
 		handler.start()
 
-		if (self.log_handler != None): self.log_handler.debug("pas.server started a new thread '{0!r}'".format(handler))
+		if (self.log_handler != None): self.log_handler.debug("pas.server.Dispatcher started a new thread '{0!r}'".format(handler))
 	#
 
-	def active_queue(self, py_socket):
+	def _active_queue(self, _socket):
 	#
 		"""
 Put's an transport on the active queue or tries to temporarily save it on
 the passive queue.
 
-:param py_socket: Active socket resource
+:param _socket: Active socket resource
 
 :return: (int) Selected queue ID (> -1); True if passively queued.
 :since:  v0.1.00
 		"""
 
-		var_return = False
+		_return = False
 
 		if (self.active):
 		#
@@ -167,8 +166,8 @@ the passive queue.
 				#
 					if (self.active):
 					#
-						self.actives_list.append(py_socket)
-						var_return = True
+						self.actives_list.append(_socket)
+						_return = True
 					#
 					else: self.actives.release()
 				#
@@ -176,17 +175,17 @@ the passive queue.
 			else:
 			#
 				handler = self.queue_handler()
-				handler.set_instance_data(self, py_socket)
+				handler.set_instance_data(self, _socket)
 				handler.start()
 
 				self.waiting += 1
 			#
 		#
 
-		return var_return
+		return _return
 	#
 
-	def active_unqueue(self, py_socket):
+	def active_unqueue(self, _socket):
 	#
 		"""
 Unqueue the given ID from the active queue.
@@ -196,10 +195,10 @@ Unqueue the given ID from the active queue.
 :since: v0.1.00
 		"""
 
-		if (self.unqueue(self.actives_list, py_socket)): self.actives.release()
+		if (self._unqueue(self.actives_list, _socket)): self.actives.release()
 	#
 
-	def active_unqueue_all(self):
+	def _active_unqueue_all(self):
 	#
 		"""
 Unqueue all entries from the active queue (canceling running processes).
@@ -211,9 +210,9 @@ Unqueue all entries from the active queue (canceling running processes).
 		#
 			if (self.actives_list != None):
 			#
-				for py_socket in self.actives_list:
+				for _socket in self.actives_list:
 				#
-					if (self.unqueue(self.actives_list, py_socket)): self.actives.release()
+					if (self._unqueue(self.actives_list, _socket)): self.actives.release()
 				#
 			#
 		#
@@ -245,8 +244,8 @@ call for the local endpoint.
 		#
 			try:
 			#
-				var_socket = self.accept()
-				if (self.active_queue(var_socket[0])): self.active_activate(var_socket[0])
+				_socket = self.accept()[0]
+				if (self._active_queue(_socket)): self._active_activate(_socket)
 			#
 			except ShutdownException as handled_exception:
 			#
@@ -304,7 +303,7 @@ on the channel's socket will succeed.
 		#
 			try:
 			#
-				if (self.active_queue(self.listener_socket)): self.active_activate(self.listener_socket)
+				if (self._active_queue(self.listener_socket)): self._active_activate(self.listener_socket)
 			#
 			except Exception as handled_exception:
 			#
@@ -331,7 +330,7 @@ rarely used.
 :since: v0.1.00
 		"""
 
-		if (self.active): self.active_unqueue_all()
+		if (self.active): self._active_unqueue_all()
 	#
 
 	def start(self):
@@ -353,9 +352,9 @@ Run the main loop for this server instance.
 :since: v0.1.00
 		"""
 
-		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -dispatcher.run()- (#echo(__LINE__)#)")
+		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -Dispatcher.run()- (#echo(__LINE__)#)")
 
-		self.thread_local_check()
+		self._thread_local_check()
 
 		if (self.stopping_hook != None):
 		#
@@ -409,7 +408,7 @@ Sets the status for the listener.
 :since: v0.1.00
 		"""
 
-		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -dispatcher.set_active(status)- (#echo(__LINE__)#)")
+		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -Dispatcher.set_active(status)- (#echo(__LINE__)#)")
 
 		with self.synchronized:
 		#
@@ -438,7 +437,7 @@ Stops the listener and unqueues all running sockets.
 :since: v0.1.00
 		"""
 
-		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -dispatcher.stop()- (#echo(__LINE__)#)")
+		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -Dispatcher.stop()- (#echo(__LINE__)#)")
 
 		self.synchronized.acquire()
 
@@ -454,12 +453,12 @@ Stops the listener and unqueues all running sockets.
 			try: self.close()
 			except: pass
 
-			self.active_unqueue_all()
+			self._active_unqueue_all()
 		#
 		else: self.synchronized.release()
 	#
 
-	def thread_local_check(self):
+	def _thread_local_check(self):
 	#
 		"""
 For thread safety some variables are defined per thread. This method makes
@@ -484,13 +483,13 @@ Stops the running server instance by a stopping hook call.
 :since:  v1.0.0
 		"""
 
-		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -dispatcher.thread_stop()- (#echo(__LINE__)#)")
+		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -Dispatcher.thread_stop()- (#echo(__LINE__)#)")
 
 		self.stop()
 		return last_return
 	#
 
-	def unqueue(self, queue, py_socket):
+	def _unqueue(self, queue, _socket):
 	#
 		"""
 Unqueues a previously active socket connection.
@@ -502,26 +501,26 @@ Unqueues a previously active socket connection.
 :since:  v0.1.00
 		"""
 
-		var_return = False
+		_return = False
 
 		self.synchronized.acquire()
 
-		if (queue != None and py_socket in queue):
+		if (queue != None and _socket in queue):
 		#
-			queue.remove(py_socket)
+			queue.remove(_socket)
 			self.synchronized.release()
 
-			var_return = True
+			_return = True
 
 			if (self.listener_handle_connections):
 			#
-				try: py_socket.close()
+				try: _socket.close()
 				except: pass
 			#
 		#
 		else: self.synchronized.release()
 
-		return var_return
+		return _return
 	#
 
 	def writable(self):
@@ -551,26 +550,26 @@ Prepare socket returns a bound socket for the given listener data.
 :since: v0.1.00
 		"""
 
-		var_return = None
+		_return = None
 
 		if (listener_type == socket.AF_INET or listener_type == socket.AF_INET6):
 		#
 			listener_data[0] = Binary.str(listener_data[0])
 			listener_data = ( listener_data[0], listener_data[1] )
 
-			var_return = socket.socket(listener_type, socket.SOCK_STREAM)
-			var_return.setblocking(0)
-			if (hasattr(socket, "SO_REUSEADDR")): var_return.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-			var_return.bind(listener_data)
+			_return = socket.socket(listener_type, socket.SOCK_STREAM)
+			_return.setblocking(0)
+			if (hasattr(socket, "SO_REUSEADDR")): _return.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+			_return.bind(listener_data)
 		#
 		elif (listener_type == socket.AF_UNIX):
 		#
 			unixsocket_pathname = path.normpath(Binary.str(listener_data[0]))
 			if (os.access(unixsocket_pathname, os.F_OK)): os.unlink(unixsocket_pathname)
 
-			var_return = socket.socket(listener_type, socket.SOCK_STREAM)
-			if (hasattr(socket, "SO_REUSEADDR")): var_return.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-			var_return.bind(unixsocket_pathname)
+			_return = socket.socket(listener_type, socket.SOCK_STREAM)
+			if (hasattr(socket, "SO_REUSEADDR")): _return.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+			_return.bind(unixsocket_pathname)
 
 			socket_chmod = 0
 			socket_chmod_value = int(Settings.get("pas_server_chmod_unix_sockets", "600"), 8)
@@ -591,7 +590,7 @@ Prepare socket returns a bound socket for the given listener data.
 			os.chmod(unixsocket_pathname, socket_chmod)
 		#
 
-		return var_return
+		return _return
 	#
 #
 
