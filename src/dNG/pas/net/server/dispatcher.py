@@ -24,13 +24,15 @@ http://www.direct-netware.de/redirect.py?licenses;mpl2
 NOTE_END //n"""
 
 from os import path
-from threading import local, BoundedSemaphore, RLock, Thread
+from threading import local, BoundedSemaphore
 import asyncore, os, stat, socket
 
 from dNG.pas.data.binary import Binary
 from dNG.pas.data.settings import Settings
 from dNG.pas.module.named_loader import NamedLoader
 from dNG.pas.plugins.hooks import Hooks
+from dNG.pas.runtime.instance_lock import InstanceLock
+from dNG.pas.runtime.thread import Thread
 from .handler import Handler
 from .shutdown_exception import ShutdownException
 
@@ -95,9 +97,13 @@ Listener socket
 		"""
 Local data handle
 		"""
+		self.lock = InstanceLock()
+		"""
+Thread safety lock
+		"""
 		self.log_handler = NamedLoader.get_singleton("dNG.pas.data.logging.LogHandler", False)
 		"""
-The log_handler is called whenever debug messages should be logged or errors
+The LogHandler is called whenever debug messages should be logged or errors
 happened.
 		"""
 		self.queue_handler = (queue_handler if (isinstance(queue_handler, Handler)) else None)
@@ -112,10 +118,6 @@ Passive queue maximum
 		"""
 Stopping hook definition
 		"""
-		self.synchronized = RLock()
-		"""
-Thread safety lock
-		"""
 		self.thread = None
 		"""
 Thread if started and active
@@ -129,9 +131,8 @@ Thread safety lock
 	def _active_activate(self, _socket):
 	#
 		"""
-Unqueue the given ID from the active queue.
+Run the active handler for the given socket.
 
-:param id: Queue ID
 :param _socket: Active socket resource
 
 :since: v0.1.00
@@ -141,7 +142,7 @@ Unqueue the given ID from the active queue.
 		handler.set_instance_data(self, _socket)
 		handler.start()
 
-		if (self.log_handler != None): self.log_handler.debug("pas.server.Dispatcher started a new thread '{0!r}'".format(handler))
+		if (self.log_handler != None): self.log_handler.debug("{0!r} started a new thread '{1!r}'".format(self, handler))
 	#
 
 	def _active_queue(self, _socket):
@@ -162,7 +163,7 @@ the passive queue.
 		#
 			if (self.actives.acquire(self.queue_handler == None)):
 			#
-				with self.synchronized:
+				with self.lock:
 				#
 					if (self.active):
 					#
@@ -190,7 +191,7 @@ the passive queue.
 		"""
 Unqueue the given ID from the active queue.
 
-:param id: Queue ID
+:param _socket: Active socket resource
 
 :since: v0.1.00
 		"""
@@ -206,7 +207,7 @@ Unqueue all entries from the active queue (canceling running processes).
 :since: v0.1.00
 		"""
 
-		with self.synchronized:
+		with self.lock:
 		#
 			if (self.actives_list != None):
 			#
@@ -305,16 +306,16 @@ on the channel's socket will succeed.
 			#
 				if (self._active_queue(self.listener_socket)): self._active_activate(self.listener_socket)
 			#
+			except ShutdownException as handled_exception:
+			#
+				exception = handled_exception.get_cause()
+
+				if (exception == None and self.log_handler != None): self.log_handler.error(handled_exception)
+				else: handled_exception.print_stack_trace()
+			#
 			except Exception as handled_exception:
 			#
-				if (isinstance(handled_exception, ShutdownException)):
-				#
-					exception = handled_exception.get_cause()
-
-					if (exception == None and self.log_handler != None): self.log_handler.error(handled_exception)
-					else: handled_exception.print_stack_trace()
-				#
-				elif (self.log_handler == None): ShutdownException.print_current_stack_trace()
+				if (self.log_handler == None): ShutdownException.print_current_stack_trace()
 				else: self.log_handler.error(handled_exception)
 			#
 		#
@@ -352,19 +353,19 @@ Run the main loop for this server instance.
 :since: v0.1.00
 		"""
 
-		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -Dispatcher.run()- (#echo(__LINE__)#)")
+		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}.run()- (#echo(__LINE__)#)".format(self))
 
 		self._thread_local_check()
 
 		if (self.stopping_hook != None):
 		#
-			stopping_hook = ("dNG.pas.status.shutdown" if (self.stopping_hook == "") else self.stopping_hook)
+			stopping_hook = ("dNG.pas.Status.shutdown" if (self.stopping_hook == "") else self.stopping_hook)
 			Hooks.register(stopping_hook, self.thread_stop)
 		#
 
 		try:
 		#
-			with self.synchronized:
+			with self.lock:
 			#
 				if (not self.active):
 				#
@@ -383,8 +384,6 @@ Run the main loop for this server instance.
 				exception = handled_exception.get_cause()
 				if (exception != None and self.log_handler != None): self.log_handler.error(exception)
 			#
-
-			self.stop()
 		#
 		except Exception as handled_exception:
 		#
@@ -393,9 +392,8 @@ Run the main loop for this server instance.
 				if (self.log_handler == None): ShutdownException.print_current_stack_trace()
 				else: self.log_handler.error(handled_exception)
 			#
-
-			self.stop()
 		#
+		finally: self.stop()
 	#
 
 	def set_active(self, status):
@@ -408,9 +406,9 @@ Sets the status for the listener.
 :since: v0.1.00
 		"""
 
-		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -Dispatcher.set_active(status)- (#echo(__LINE__)#)")
+		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}.set_active(status)- (#echo(__LINE__)#)".format(self))
 
-		with self.synchronized:
+		with self.lock:
 		#
 			if (self.active != status): self.active = status
 		#
@@ -419,9 +417,9 @@ Sets the status for the listener.
 	def set_log_handler(self, log_handler):
 	#
 		"""
-Sets the log_handler.
+Sets the LogHandler.
 
-:param log_handler: log_handler to use
+:param log_handler: LogHandler to use
 
 :since: v0.1.00
 		"""
@@ -437,25 +435,25 @@ Stops the listener and unqueues all running sockets.
 :since: v0.1.00
 		"""
 
-		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -Dispatcher.stop()- (#echo(__LINE__)#)")
-
-		self.synchronized.acquire()
+		self.lock.acquire()
 
 		if (self.active):
 		#
+			if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}.stop()- (#echo(__LINE__)#)".format(self))
+
 			self.active = False
 
 			if (self.stopping_hook != None and len(self.stopping_hook) > 0): Hooks.unregister(self.stopping_hook, self.thread_stop)
 			self.stopping_hook = ""
 
-			self.synchronized.release()
+			self.lock.release()
 
 			try: self.close()
-			except: pass
+			except Exception: pass
 
 			self._active_unqueue_all()
 		#
-		else: self.synchronized.release()
+		else: self.lock.release()
 	#
 
 	def _thread_local_check(self):
@@ -483,7 +481,7 @@ Stops the running server instance by a stopping hook call.
 :since:  v1.0.0
 		"""
 
-		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -Dispatcher.thread_stop()- (#echo(__LINE__)#)")
+		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}.thread_stop()- (#echo(__LINE__)#)".format(self))
 
 		self.stop()
 		return last_return
@@ -503,22 +501,22 @@ Unqueues a previously active socket connection.
 
 		_return = False
 
-		self.synchronized.acquire()
+		self.lock.acquire()
 
 		if (queue != None and _socket in queue):
 		#
 			queue.remove(_socket)
-			self.synchronized.release()
+			self.lock.release()
 
 			_return = True
 
 			if (self.listener_handle_connections):
 			#
 				try: _socket.close()
-				except: pass
+				except Exception: pass
 			#
 		#
-		else: self.synchronized.release()
+		else: self.lock.release()
 
 		return _return
 	#

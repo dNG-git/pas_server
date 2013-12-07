@@ -24,12 +24,14 @@ http://www.direct-netware.de/redirect.py?licenses;mpl2
 NOTE_END //n"""
 
 from select import select
-from threading import Thread
+from socket import SHUT_RDWR
 import time
 
 from dNG.pas.data.binary import Binary
 from dNG.pas.data.settings import Settings
 from dNG.pas.module.named_loader import NamedLoader
+from dNG.pas.plugins.hooks import Hooks
+from dNG.pas.runtime.thread import Thread
 from .shutdown_exception import ShutdownException
 
 class Handler(Thread):
@@ -74,7 +76,7 @@ Data buffer
 		"""
 		self.log_handler = NamedLoader.get_singleton("dNG.pas.data.logging.LogHandler", False)
 		"""
-The log_handler is called whenever debug messages should be logged or errors
+The LogHandler is called whenever debug messages should be logged or errors
 happened.
 		"""
 		self.server = None
@@ -91,6 +93,28 @@ Request timeout value
 		"""
 
 		if (self.timeout < 1): self.timeout = int(Settings.get("pas_global_socket_data_timeout", 30))
+	#
+
+	def __enter__(self):
+	#
+		"""
+python.org: Enter the runtime context related to this object.
+
+:since: v0.1.00
+		"""
+
+		Hooks.register("dNG.pas.Status.shutdown", self.stop)
+	#
+
+	def __exit__(self, exc_type, exc_value, traceback):
+	#
+		"""
+python.org: Exit the runtime context related to this object.
+
+:since: v0.1.00
+		"""
+
+		Hooks.unregister("dNG.pas.Status.shutdown", self.stop)
 	#
 
 	def get_address(self, flush = False):
@@ -118,7 +142,7 @@ Returns the address for the data received.
 	def get_address_family(self):
 	#
 		"""
-Returns the socket family for the address returned by "get_address()".
+Returns the socket family for the address.
 
 :return: (int) Socket family
 :since:  v0.1.00
@@ -132,7 +156,12 @@ Returns the socket family for the address returned by "get_address()".
 		"""
 Returns data read from the socket.
 
-:since: v0.1.00
+:param size: Bytes to read
+:param force_size: True to wait for data until the given size has been
+                   received.
+
+:return: (str) Data received
+:since:  v0.1.00
 		"""
 
 		_return = None
@@ -162,7 +191,7 @@ Returns data read from the socket.
 				else: data = None
 			#
 		#
-		except: pass
+		except Exception: pass
 
 		if (self.data != None and len(self.data) > 0):
 		#
@@ -170,8 +199,8 @@ Returns data read from the socket.
 			self.data = ""
 		#
 
-		if (force_size and data_size < size): raise OSError("get_data({0:d})".format(size), 5)
-		else: return _return
+		if (force_size and data_size < size): raise OSError("Received data size is smaller than the expected size of {0:d} bytes".format(size))
+		return _return
 	#
 
 	def _set_data(self, data):
@@ -179,6 +208,8 @@ Returns data read from the socket.
 		"""
 Sets data returned next time "get_data()" is called. It is placed in front of
 the data buffer.
+
+:param data: Data to be buffered
 
 :since: v0.1.00
 		"""
@@ -194,7 +225,10 @@ Placeholder "run()" method calling "_thread_run()". Do not override.
 :since: v0.1.00
 		"""
 
-		try: self._thread_run()
+		try:
+		#
+			with self: self._thread_run()
+		#
 		except ShutdownException: self.server.stop()
 		except Exception as handled_exception:
 		#
@@ -211,7 +245,6 @@ Sets relevant instance data for this thread and address connection.
 
 :param server: Server instance
 :param socket: Active socket resource
-:param id: Assigned ID
 
 :return: (mixed) Thread assigned ID if any; False on error
 :since:  v0.1.00
@@ -226,14 +259,34 @@ Sets relevant instance data for this thread and address connection.
 	def set_log_handler(self, log_handler):
 	#
 		"""
-Sets the log_handler.
+Sets the LogHandler.
 
-:param log_handler: log_handler to use
+:param log_handler: LogHandler to use
 
 :since: v0.1.00
 		"""
 
 		self.log_handler = log_handler
+	#
+
+	def stop(self, params = None, last_return = None):
+	#
+		"""
+Stop the thread by actually closing the underlying socket.
+
+:param params: Parameter specified
+:param last_return: The return value from the last hook called.
+
+:since: v0.1.00
+		"""
+
+		try: self.socket.shutdown(SHUT_RDWR)
+		except Exception: pass
+
+		try: self.socket.close()
+		except Exception: pass
+
+		return last_return
 	#
 
 	def _thread_run(self):
@@ -244,7 +297,7 @@ Placeholder "_thread_run()" method doing nothing.
 :since: v0.1.00
 		"""
 
-		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -Handler._thread_run()- (#echo(__LINE__)#)")
+		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}._thread_run()- (#echo(__LINE__)#)".format(self))
 	#
 
 	def write_data(self, data):
