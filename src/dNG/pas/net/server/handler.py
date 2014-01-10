@@ -31,6 +31,7 @@ from dNG.pas.data.binary import Binary
 from dNG.pas.data.settings import Settings
 from dNG.pas.module.named_loader import NamedLoader
 from dNG.pas.plugins.hooks import Hooks
+from dNG.pas.runtime.io_exception import IOException
 from dNG.pas.runtime.thread import Thread
 from .shutdown_exception import ShutdownException
 
@@ -199,7 +200,7 @@ Returns data read from the socket.
 			self.data = ""
 		#
 
-		if (force_size and data_size < size): raise OSError("Received data size is smaller than the expected size of {0:d} bytes".format(size))
+		if (force_size and data_size < size): raise IOException("Received data size is smaller than the expected size of {0:d} bytes".format(size))
 		return _return
 	#
 

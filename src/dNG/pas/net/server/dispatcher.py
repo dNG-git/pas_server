@@ -245,8 +245,8 @@ call for the local endpoint.
 		#
 			try:
 			#
-				_socket = self.accept()[0]
-				if (self._active_queue(_socket)): self._active_activate(_socket)
+				socket_data = self.accept()
+				if (socket_data != None and self._active_queue(socket_data[0])): self._active_activate(socket_data[0])
 			#
 			except ShutdownException as handled_exception:
 			#
