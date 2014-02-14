@@ -165,6 +165,8 @@ Returns data read from the socket.
 :since:  v0.1.00
 		"""
 
+		# pylint: disable=broad-except
+
 		_return = None
 
 		data = None
@@ -281,6 +283,8 @@ Stop the thread by actually closing the underlying socket.
 :since: v0.1.00
 		"""
 
+		# pylint: disable=broad-except
+
 		try: self.socket.shutdown(SHUT_RDWR)
 		except Exception: pass
 
@@ -311,6 +315,8 @@ Write data to the socket.
 :return: (bool) True on success
 :since:  v1.0.0
 		"""
+
+		# pylint: disable=broad-except
 
 		_return = True
 

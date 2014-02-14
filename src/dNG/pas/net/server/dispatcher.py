@@ -284,10 +284,12 @@ negotiation with the remote endpoint, for example.
 :since: v0.1.00
 		"""
 
+		# pylint: disable=broad-except
+
 		if (self.active):
 		#
 			try: self.listen(self.queue_max)
-			except: ShutdownException.print_current_stack_trace()
+			except Exception: ShutdownException.print_current_stack_trace()
 		#
 	#
 
@@ -435,6 +437,8 @@ Stops the listener and unqueues all running sockets.
 :since: v0.1.00
 		"""
 
+		# pylint: disable=broad-except
+
 		self.lock.acquire()
 
 		if (self.active):
@@ -498,6 +502,8 @@ Unqueues a previously active socket connection.
 :return: (bool) True on success
 :since:  v0.1.00
 		"""
+
+		# pylint: disable=broad-except
 
 		_return = False
 
