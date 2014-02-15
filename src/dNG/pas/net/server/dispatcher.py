@@ -52,6 +52,8 @@ of requests transparently.
              Mozilla Public License, v. 2.0
 	"""
 
+	# pylint: disable=unused-argument
+
 	def __init__(self, listener_socket, active_handler, threads_active = 5, queue_handler = None, threads_queued = 10, thread_stopping_hook = None):
 	#
 		"""

@@ -49,6 +49,8 @@ Active thread for the dNG server infrastructure.
              Mozilla Public License, v. 2.0
 	"""
 
+	# pylint: disable=unused-argument
+
 	def __init__(self):
 	#
 		"""
