@@ -25,7 +25,11 @@ NOTE_END //n"""
 
 from os import path
 from threading import local, BoundedSemaphore
-import asyncore, os, stat, socket
+import asyncore
+import os
+import stat
+import socket
+import time
 
 from dNG.pas.data.binary import Binary
 from dNG.pas.data.settings import Settings
@@ -94,6 +98,10 @@ Listener socket
 		self.listener_socket = listener_socket
 		"""
 Listener socket
+		"""
+		self.listener_startup_timeout = 45
+		"""
+Listener startup timeout
 		"""
 		self.local = None
 		"""
@@ -286,13 +294,7 @@ negotiation with the remote endpoint, for example.
 :since: v0.1.00
 		"""
 
-		# pylint: disable=broad-except
-
-		if (self.active):
-		#
-			try: self.listen(self.queue_max)
-			except Exception: ShutdownException.print_current_stack_trace()
-		#
+		if (self.active): self._start_listening()
 	#
 
 	def handle_read(self):
@@ -349,6 +351,38 @@ Starts the prepared dispatcher in a new thread.
 		Thread(target = self.run).start()
 	#
 
+	def _start_listening(self):
+	#
+		"""
+Try to start listening on the prepared socket. Uses the defined startup
+timeout to wait for the socket to become available before throwing an
+exception.
+
+:since: v0.1.00
+		"""
+
+		# pylint: disable=broad-except,raising-bad-type
+
+		_exception = None
+		timeout_time = (time.time() + self.listener_startup_timeout)
+
+		while (time.time() < timeout_time):
+		#
+			try:
+			#
+				if (_exception != None): time.sleep(0.2)
+				_exception = None
+
+				self.listen(self.queue_max)
+
+				break
+			#
+			except Exception as handled_exception: _exception = handled_exception
+		#
+
+		if (_exception != None): raise _exception
+	#
+
 	def run(self):
 	#
 		"""
@@ -373,7 +407,7 @@ Run the main loop for this server instance.
 			#
 				if (not self.active):
 				#
-					if (self.listener_handle_connections): self.listen(self.queue_max)
+					if (self.listener_handle_connections): self._start_listening()
 					self.active = True
 				#
 			#
