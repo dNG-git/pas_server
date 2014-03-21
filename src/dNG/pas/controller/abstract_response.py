@@ -26,10 +26,11 @@ NOTE_END //n"""
 from threading import local
 from weakref import ref
 
+from dNG.pas.data.supports_mixin import SupportsMixin
 from dNG.pas.runtime.io_exception import IOException
 from dNG.pas.runtime.not_implemented_exception import NotImplementedException
 
-class AbstractResponse(object):
+class AbstractResponse(SupportsMixin):
 #
 	"""
 This abstract class contains common methods for response implementations.
@@ -55,6 +56,8 @@ Constructor __init__(AbstractResponse)
 
 :since: v0.1.01
 		"""
+
+		SupportsMixin.__init__(self)
 
 		self.log_handler = None
 		"""
@@ -145,42 +148,6 @@ Sets the LogHandler.
 		"""
 
 		self.log_handler = log_handler
-	#
-
-	def supports_headers(self):
-	#
-		"""
-Returns false if headers are not supported.
-
-:return: (bool) True if the response contain headers.
-:since:  v0.1.01
-		"""
-
-		return False
-	#
-
-	def supports_script_name(self):
-	#
-		"""
-Returns false if the script name is not needed for execution.
-
-:return: (bool) True if the controller should call "set_script_name()".
-:since:  v0.1.01
-		"""
-
-		return False
-	#
-
-	def supports_streaming(self):
-	#
-		"""
-Returns false if responses can not be streamed.
-
-:return: (bool) True if streaming is supported.
-:since:  v0.1.01
-		"""
-
-		return False
 	#
 
 	@staticmethod

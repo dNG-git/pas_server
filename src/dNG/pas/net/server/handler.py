@@ -169,7 +169,7 @@ Returns data read from the socket.
 
 		# pylint: disable=broad-except
 
-		_return = None
+		_return = ""
 
 		data = None
 		data_size = 0

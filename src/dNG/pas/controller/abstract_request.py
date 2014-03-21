@@ -26,9 +26,10 @@ NOTE_END //n"""
 from threading import local
 from weakref import ref
 
+from dNG.pas.data.supports_mixin import SupportsMixin
 from dNG.pas.runtime.not_implemented_exception import NotImplementedException
 
-class AbstractRequest(object):
+class AbstractRequest(SupportsMixin):
 #
 	"""
 This abstract class contains common methods for request implementations.
@@ -54,6 +55,8 @@ Constructor __init__(AbstractRequest)
 
 :since: v0.1.01
 		"""
+
+		SupportsMixin.__init__(self)
 
 		self.client_host = None
 		"""
@@ -132,7 +135,7 @@ Returns the value for the specified parameter.
 :param default: Default value if not set
 
 :return: (mixed) Requested value or default one if undefined
-:since:  v0.1.00
+:since:  v0.1.01
 		"""
 
 		return (self.parameters[name] if (name in self.parameters) else default)
@@ -144,7 +147,7 @@ Returns the value for the specified parameter.
 Return all parameters received.
 
 :return: (mixed) Request parameters
-:since:  v0.1.00
+:since:  v0.1.01
 		"""
 
 		return self.parameters
@@ -236,54 +239,6 @@ Sets the LogHandler.
 		"""
 
 		self.log_handler = log_handler
-	#
-
-	def supports_accepted_formats(self):
-	#
-		"""
-Returns false if accepted formats can not be identified.
-
-:return: (bool) True if accepted formats are identified.
-:since:  v0.1.01
-		"""
-
-		return False
-	#
-
-	def supports_compression(self):
-	#
-		"""
-Returns false if supported compression formats can not be identified.
-
-:return: (bool) True if compression formats are identified.
-:since:  v0.1.01
-		"""
-
-		return False
-	#
-
-	def supports_headers(self):
-	#
-		"""
-Returns false if the script name is not needed for execution.
-
-:return: (bool) True if the request contains headers.
-:since:  v0.1.01
-		"""
-
-		return False
-	#
-
-	def supports_listener_data(self):
-	#
-		"""
-Returns false if the server address is unknown.
-
-:return: (bool) True if listener are known.
-:since:  v0.1.01
-		"""
-
-		return False
 	#
 
 	@staticmethod
