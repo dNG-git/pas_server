@@ -89,6 +89,8 @@ Server scheme / protocol
 		"""
 
 		AbstractRequest.local.weakref_instance = ref(self)
+
+		self.supported_features['listener_data'] = self._supports_listener_data
 	#
 
 	def execute(self):
@@ -239,6 +241,18 @@ Sets the LogHandler.
 		"""
 
 		self.log_handler = log_handler
+	#
+
+	def _supports_listener_data(self):
+	#
+		"""
+Returns false if the server address is unknown.
+
+:return: (bool) True if listener are known.
+:since:  v0.1.01
+		"""
+
+		return (self.server_host != None)
 	#
 
 	@staticmethod
