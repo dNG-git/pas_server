@@ -612,7 +612,7 @@ Prepare socket returns a bound socket for the given listener data.
 			_return.bind(unixsocket_pathname)
 
 			socket_chmod = 0
-			socket_chmod_value = int(Settings.get("pas_server_chmod_unix_sockets", "600"), 8)
+			socket_chmod_value = int(Settings.get("pas_global_server_chmod_unix_sockets", "600"), 8)
 
 			if ((1000 & socket_chmod_value) == 1000): socket_chmod |= stat.S_ISVTX
 			if ((2000 & socket_chmod_value) == 2000): socket_chmod |= stat.S_ISGID

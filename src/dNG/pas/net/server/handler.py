@@ -90,7 +90,7 @@ Server instance
 		"""
 Socket instance
 		"""
-		self.timeout = int(Settings.get("pas_server_socket_data_timeout", 0))
+		self.timeout = int(Settings.get("pas_global_server_socket_data_timeout", 0))
 		"""
 Request timeout value
 		"""
