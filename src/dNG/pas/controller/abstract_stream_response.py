@@ -221,8 +221,8 @@ Sets the streamer to create response data when requested.
 		if (not hasattr(streamer, "read")): raise ValueException("Given streaming object is not supported.")
 		self.streamer = streamer
 
-		if (self.stream_mode_supported & AbstractStreamResponse.STREAM_ITERATOR != AbstractStreamResponse.STREAM_ITERATOR): self.stream_mode |= AbstractStreamResponse.STREAM_ITERATOR
-		elif (self.is_supported("streaming")): self.set_stream_mode()
+		if (self.stream_mode_supported & AbstractStreamResponse.STREAM_ITERATOR == AbstractStreamResponse.STREAM_ITERATOR): self.stream_mode |= AbstractStreamResponse.STREAM_ITERATOR
+		if (self.is_supported("streaming")): self.set_stream_mode()
 	#
 
 	def _write(self, data):
