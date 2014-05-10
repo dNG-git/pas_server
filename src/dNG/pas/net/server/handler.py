@@ -30,7 +30,7 @@ import time
 from dNG.pas.data.binary import Binary
 from dNG.pas.data.settings import Settings
 from dNG.pas.module.named_loader import NamedLoader
-from dNG.pas.plugins.hooks import Hooks
+from dNG.pas.plugins.hook import Hook
 from dNG.pas.runtime.io_exception import IOException
 from dNG.pas.runtime.thread import Thread
 from .shutdown_exception import ShutdownException
@@ -106,7 +106,7 @@ python.org: Enter the runtime context related to this object.
 :since: v0.1.00
 		"""
 
-		Hooks.register("dNG.pas.Status.shutdown", self.stop)
+		Hook.register("dNG.pas.Status.shutdown", self.stop)
 	#
 
 	def __exit__(self, exc_type, exc_value, traceback):
@@ -117,7 +117,7 @@ python.org: Exit the runtime context related to this object.
 :since: v0.1.00
 		"""
 
-		Hooks.unregister("dNG.pas.Status.shutdown", self.stop)
+		Hook.unregister("dNG.pas.Status.shutdown", self.stop)
 	#
 
 	def get_address(self, flush = False):

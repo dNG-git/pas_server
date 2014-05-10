@@ -34,7 +34,7 @@ import time
 from dNG.pas.data.binary import Binary
 from dNG.pas.data.settings import Settings
 from dNG.pas.module.named_loader import NamedLoader
-from dNG.pas.plugins.hooks import Hooks
+from dNG.pas.plugins.hook import Hook
 from dNG.pas.runtime.instance_lock import InstanceLock
 from dNG.pas.runtime.thread import Thread
 from .handler import Handler
@@ -393,12 +393,12 @@ Run the main loop for this server instance.
 
 		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}.run()- (#echo(__LINE__)#)".format(self))
 
-		self._thread_local_check()
+		self._thread_ensure_local()
 
 		if (self.stopping_hook != None):
 		#
 			stopping_hook = ("dNG.pas.Status.shutdown" if (self.stopping_hook == "") else self.stopping_hook)
-			Hooks.register(stopping_hook, self.thread_stop)
+			Hook.register(stopping_hook, self.thread_stop)
 		#
 
 		try:
@@ -483,7 +483,7 @@ Stops the listener and unqueues all running sockets.
 
 			self.active = False
 
-			if (self.stopping_hook != None and len(self.stopping_hook) > 0): Hooks.unregister(self.stopping_hook, self.thread_stop)
+			if (self.stopping_hook != None and len(self.stopping_hook) > 0): Hook.unregister(self.stopping_hook, self.thread_stop)
 			self.stopping_hook = ""
 
 			self.lock.release()
@@ -496,7 +496,7 @@ Stops the listener and unqueues all running sockets.
 		else: self.lock.release()
 	#
 
-	def _thread_local_check(self):
+	def _thread_ensure_local(self):
 	#
 		"""
 For thread safety some variables are defined per thread. This method makes
