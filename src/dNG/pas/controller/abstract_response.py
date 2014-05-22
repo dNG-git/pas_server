@@ -44,7 +44,7 @@ This abstract class contains common methods for response implementations.
              Mozilla Public License, v. 2.0
 	"""
 
-	local = local()
+	_local = local()
 	"""
 Thread-local static object
 	"""
@@ -69,7 +69,7 @@ happened.
 Response specific generic cache
 		"""
 
-		AbstractResponse.local.weakref_instance = ref(self)
+		AbstractResponse._local.weakref_instance = ref(self)
 	#
 
 	def get_store(self):
@@ -160,7 +160,7 @@ Get the AbstractResponse singleton.
 :since:  v0.1.01
 		"""
 
-		return (AbstractResponse.local.weakref_instance() if (hasattr(AbstractResponse.local, "weakref_instance")) else None)
+		return (AbstractResponse._local.weakref_instance() if (hasattr(AbstractResponse._local, "weakref_instance")) else None)
 	#
 
 	@staticmethod

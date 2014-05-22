@@ -106,7 +106,7 @@ python.org: Enter the runtime context related to this object.
 :since: v0.1.00
 		"""
 
-		Hook.register("dNG.pas.Status.shutdown", self.stop)
+		Hook.register("dNG.pas.Status.onShutdown", self.stop)
 	#
 
 	def __exit__(self, exc_type, exc_value, traceback):
@@ -117,7 +117,7 @@ python.org: Exit the runtime context related to this object.
 :since: v0.1.00
 		"""
 
-		Hook.unregister("dNG.pas.Status.shutdown", self.stop)
+		Hook.unregister("dNG.pas.Status.onShutdown", self.stop)
 	#
 
 	def get_address(self, flush = False):

@@ -24,8 +24,9 @@ http://www.direct-netware.de/redirect.py?licenses;mpl2
 NOTE_END //n"""
 
 from dNG.pas.data.supports_mixin import SupportsMixin
+from .abstract_mixin import AbstractMixin
 
-class AbstractInnerRequest(SupportsMixin):
+class AbstractInnerRequest(AbstractMixin, SupportsMixin):
 #
 	"""
 This abstract class contains common methods for inner requests usually used
@@ -48,129 +49,43 @@ Constructor __init__(AbstractInnerRequest)
 :since: v0.1.01
 		"""
 
+		AbstractMixin.__init__(self)
 		SupportsMixin.__init__(self)
 
-		self.client_host = None
+		self.parameters_chained = { }
 		"""
-Client host
-		"""
-		self.client_port = None
-		"""
-Client port
-		"""
-		self.parameters = { }
-		"""
-Request parameters
-		"""
-		self.script_name = None
-		"""
-Called script
-		"""
-		self.script_pathname = None
-		"""
-Request path to the script
-		"""
-		self.server_host = None
-		"""
-Server host
-		"""
-		self.server_port = None
-		"""
-Server port
-		"""
-		self.server_scheme = None
-		"""
-Server scheme / protocol
+Chained request parameters
 		"""
 
 		self.supported_features['listener_data'] = self._supports_listener_data
+		self.supported_features['parameters_chained'] = self._supports_listener_data
 	#
 
-	def get_client_host(self):
-	#
-		"""
-Returns the client host if any.
-
-:return: (str) Client host; None if unknown or not applicable
-:since:  v0.1.01
-		"""
-
-		return self.client_host
-	#
-
-	def get_client_port(self):
+	def get_parameter_chained(self, name, default = None):
 	#
 		"""
-Returns the client port if any.
+Returns the value for the specified parameter in a chained request.
 
-:return: (int) Client port; None if unknown or not applicable
-:since:  v0.1.01
-		"""
-
-		return self.client_port
-	#
-
-	def get_parameter(self, name, default = None):
-	#
-		"""
-Returns the value for the specified parameter.
-
-:param key: Parameter name
+:param name: Parameter name
 :param default: Default value if not set
 
 :return: (mixed) Requested value or default one if undefined
 :since:  v0.1.01
 		"""
 
-		return (self.parameters[name] if (name in self.parameters) else default)
+		return (self.parameters_chained[name] if (name in self.parameters_chained) else default)
 	#
 
-	def get_parameters(self):
+	def get_parameters_chained(self):
 	#
 		"""
-Return all parameters received.
+Return all parameters of a chained request.
 
-:return: (mixed) Request parameters
-:since:  v0.1.01
+:return: (dict) Request parameters chained
+:since: v0.1.01
 		"""
 
-		return self.parameters
-	#
-
-	def get_server_host(self):
-	#
-		"""
-Returns the server host if any.
-
-:return: (str) Server host; None if unknown or not applicable
-:since:  v0.1.01
-		"""
-
-		return self.server_host
-	#
-
-	def get_server_port(self):
-	#
-		"""
-Returns the server port if any.
-
-:return: (int) Server port; None if unknown or not applicable
-:since:  v0.1.01
-		"""
-
-		return self.server_port
-	#
-
-	def get_server_scheme(self):
-	#
-		"""
-Returns the server scheme.
-
-:return: (str) Server scheme / protocol; None if unknown
-:since:  v0.1.01
-		"""
-
-		return self.server_scheme
+		return self.parameters_chained
 	#
 
 	def init(self, request):
@@ -227,6 +142,20 @@ Sets the server host for the inner request.
 		"""
 
 		self.server_host = host
+	#
+
+	def set_parameter_chained(self, name, value):
+	#
+		"""
+Sets the value for the given parameter in a chained request.
+
+:param name: Parameter name
+:param value: Parameter value
+
+:since: v0.1.01
+		"""
+
+		self.parameters_chained[name] = value
 	#
 
 	def set_server_port(self, port):

@@ -107,7 +107,7 @@ Listener startup timeout
 		"""
 Local data handle
 		"""
-		self.lock = InstanceLock()
+		self._lock = InstanceLock()
 		"""
 Thread safety lock
 		"""
@@ -173,7 +173,7 @@ the passive queue.
 		#
 			if (self.actives.acquire(self.queue_handler == None)):
 			#
-				with self.lock:
+				with self._lock:
 				#
 					if (self.active):
 					#
@@ -217,7 +217,7 @@ Unqueue all entries from the active queue (canceling running processes).
 :since: v0.1.00
 		"""
 
-		with self.lock:
+		with self._lock:
 		#
 			if (self.actives_list != None):
 			#
@@ -227,6 +227,19 @@ Unqueue all entries from the active queue (canceling running processes).
 				#
 			#
 		#
+	#
+
+	def _ensure_thread_local(self):
+	#
+		"""
+For thread safety some variables are defined per thread. This method makes
+sure that these variables are defined.
+
+:since: v0.1.00
+		"""
+
+		if (self.local == None): self.local = local()
+		if (not hasattr(self.local, "sockets")): self.local.sockets = { }
 	#
 
 	def get_status(self):
@@ -393,17 +406,17 @@ Run the main loop for this server instance.
 
 		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}.run()- (#echo(__LINE__)#)".format(self))
 
-		self._thread_ensure_local()
+		self._ensure_thread_local()
 
 		if (self.stopping_hook != None):
 		#
-			stopping_hook = ("dNG.pas.Status.shutdown" if (self.stopping_hook == "") else self.stopping_hook)
+			stopping_hook = ("dNG.pas.Status.onShutdown" if (self.stopping_hook == "") else self.stopping_hook)
 			Hook.register(stopping_hook, self.thread_stop)
 		#
 
 		try:
 		#
-			with self.lock:
+			with self._lock:
 			#
 				if (not self.active):
 				#
@@ -446,7 +459,7 @@ Sets the status for the listener.
 
 		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}.set_active(status)- (#echo(__LINE__)#)".format(self))
 
-		with self.lock:
+		with self._lock:
 		#
 			if (self.active != status): self.active = status
 		#
@@ -475,7 +488,7 @@ Stops the listener and unqueues all running sockets.
 
 		# pylint: disable=broad-except
 
-		self.lock.acquire()
+		self._lock.acquire()
 
 		if (self.active):
 		#
@@ -486,27 +499,14 @@ Stops the listener and unqueues all running sockets.
 			if (self.stopping_hook != None and len(self.stopping_hook) > 0): Hook.unregister(self.stopping_hook, self.thread_stop)
 			self.stopping_hook = ""
 
-			self.lock.release()
+			self._lock.release()
 
 			try: self.close()
 			except Exception: pass
 
 			self._active_unqueue_all()
 		#
-		else: self.lock.release()
-	#
-
-	def _thread_ensure_local(self):
-	#
-		"""
-For thread safety some variables are defined per thread. This method makes
-sure that these variables are defined.
-
-:since: v0.1.00
-		"""
-
-		if (self.local == None): self.local = local()
-		if (not hasattr(self.local, "sockets")): self.local.sockets = { }
+		else: self._lock.release()
 	#
 
 	def thread_stop(self, params = None, last_return = None):
@@ -543,12 +543,12 @@ Unqueues a previously active socket connection.
 
 		_return = False
 
-		self.lock.acquire()
+		self._lock.acquire()
 
 		if (queue != None and _socket in queue):
 		#
 			queue.remove(_socket)
-			self.lock.release()
+			self._lock.release()
 
 			_return = True
 
@@ -558,7 +558,7 @@ Unqueues a previously active socket connection.
 				except Exception: pass
 			#
 		#
-		else: self.lock.release()
+		else: self._lock.release()
 
 		return _return
 	#

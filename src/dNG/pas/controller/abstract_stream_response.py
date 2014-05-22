@@ -152,7 +152,7 @@ Send data in cache.
 			#
 				is_valid = True
 
-				while (is_valid and (not self.streamer.eof_check())):
+				while (is_valid and (not self.streamer.is_eof())):
 				#
 					data = self.streamer.read()
 

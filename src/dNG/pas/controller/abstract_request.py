@@ -28,8 +28,9 @@ from weakref import ref
 
 from dNG.pas.data.supports_mixin import SupportsMixin
 from dNG.pas.runtime.not_implemented_exception import NotImplementedException
+from .abstract_mixin import AbstractMixin
 
-class AbstractRequest(SupportsMixin):
+class AbstractRequest(AbstractMixin, SupportsMixin):
 #
 	"""
 This abstract class contains common methods for request implementations.
@@ -43,7 +44,7 @@ This abstract class contains common methods for request implementations.
              Mozilla Public License, v. 2.0
 	"""
 
-	local = local()
+	_local = local()
 	"""
 Thread-local static object
 	"""
@@ -56,39 +57,10 @@ Constructor __init__(AbstractRequest)
 :since: v0.1.01
 		"""
 
+		AbstractMixin.__init__(self)
 		SupportsMixin.__init__(self)
 
-		self.client_host = None
-		"""
-Client host
-		"""
-		self.client_port = None
-		"""
-Client port
-		"""
-		self.log_handler = None
-		"""
-The LogHandler is called whenever debug messages should be logged or errors
-happened.
-		"""
-		self.parameters = { }
-		"""
-Request parameters
-		"""
-		self.server_host = None
-		"""
-Server host
-		"""
-		self.server_port = None
-		"""
-Server port
-		"""
-		self.server_scheme = None
-		"""
-Server scheme / protocol
-		"""
-
-		AbstractRequest.local.weakref_instance = ref(self)
+		AbstractRequest._local.weakref_instance = ref(self)
 
 		self.supported_features['listener_data'] = self._supports_listener_data
 	#
@@ -102,93 +74,6 @@ Executes the incoming request.
 		"""
 
 		raise NotImplementedException()
-	#
-
-	def get_client_host(self):
-	#
-		"""
-Returns the client host if any.
-
-:return: (str) Client host; None if unknown or not applicable
-:since:  v0.1.01
-		"""
-
-		return self.client_host
-	#
-
-	def get_client_port(self):
-	#
-		"""
-Returns the client port if any.
-
-:return: (int) Client port; None if unknown or not applicable
-:since:  v0.1.01
-		"""
-
-		return self.client_port
-	#
-
-	def get_parameter(self, name, default = None):
-	#
-		"""
-Returns the value for the specified parameter.
-
-:param key: Parameter name
-:param default: Default value if not set
-
-:return: (mixed) Requested value or default one if undefined
-:since:  v0.1.01
-		"""
-
-		return (self.parameters[name] if (name in self.parameters) else default)
-	#
-
-	def get_parameters(self):
-	#
-		"""
-Return all parameters received.
-
-:return: (mixed) Request parameters
-:since:  v0.1.01
-		"""
-
-		return self.parameters
-	#
-
-	def get_server_host(self):
-	#
-		"""
-Returns the server host if any.
-
-:return: (str) Server host; None if unknown or not applicable
-:since:  v0.1.01
-		"""
-
-		return self.server_host
-	#
-
-	def get_server_port(self):
-	#
-		"""
-Returns the server port if any.
-
-:return: (int) Server port; None if unknown or not applicable
-:since:  v0.1.01
-		"""
-
-		return self.server_port
-	#
-
-	def get_server_scheme(self):
-	#
-		"""
-Returns the server scheme.
-
-:return: (str) Server scheme / protocol; None if unknown
-:since:  v0.1.01
-		"""
-
-		return self.server_scheme
 	#
 
 	def init(self):
@@ -230,19 +115,6 @@ Reply the request with the given response.
 		response.send()
 	#
 
-	def set_log_handler(self, log_handler):
-	#
-		"""
-Sets the LogHandler.
-
-:param log_handler: LogHandler to use
-
-:since: v0.1.01
-		"""
-
-		self.log_handler = log_handler
-	#
-
 	def _supports_listener_data(self):
 	#
 		"""
@@ -265,7 +137,7 @@ Get the AbstractRequest singleton.
 :since:  v0.1.01
 		"""
 
-		return (AbstractRequest.local.weakref_instance() if (hasattr(AbstractRequest.local, "weakref_instance")) else None)
+		return (AbstractRequest._local.weakref_instance() if (hasattr(AbstractRequest._local, "weakref_instance")) else None)
 	#
 #
 
