@@ -151,7 +151,7 @@ Send data in cache.
 				#
 					data = self.streamer.read()
 
-					if (data == False or data == None): is_valid = False
+					if (data == None): is_valid = False
 					else: self.send_data(data)
 				#
 
