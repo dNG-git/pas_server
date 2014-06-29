@@ -18,12 +18,11 @@ http://www.direct-netware.de/redirect.py?licenses;mpl2
 #echo(__FILEPATH__)#
 """
 
-from dNG.pas.data.traced_exception import TracedException
-
-class ShutdownException(TracedException):
+class Abstract(object):
 #
 	"""
-The "ShutdownException" class is used to stop running server threads.
+"Abstract" provides methods for a controller based module and service
+implementation.
 
 :author:     direct Netware Group
 :copyright:  (C) direct Netware Group - All rights reserved
@@ -34,7 +33,56 @@ The "ShutdownException" class is used to stop running server threads.
              Mozilla Public License, v. 2.0
 	"""
 
-	pass
+	def __init__(self):
+	#
+		"""
+Constructor __init__(Abstract)
+
+:since: v0.1.00
+		"""
+
+		self.log_handler = None
+		"""
+The LogHandler is called whenever debug messages should be logged or errors
+happened.
+		"""
+		self.request = None
+		"""
+Request instance
+		"""
+		self.response = None
+		"""
+Response instance
+		"""
+	#
+
+	def init(self, request, response):
+	#
+		"""
+Initializes the controller from the given request and response.
+
+:param request: Request object
+:param response: Response object
+
+:since: v0.1.00
+		"""
+
+		self.request = request
+		self.response = response
+	#
+
+	def set_log_handler(self, log_handler):
+	#
+		"""
+Sets the LogHandler.
+
+:param log_handler: LogHandler to use
+
+:since: v0.1.00
+		"""
+
+		self.log_handler = log_handler
+	#
 #
 
 ##j## EOF

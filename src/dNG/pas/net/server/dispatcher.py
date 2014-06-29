@@ -2,10 +2,6 @@
 ##j## BOF
 
 """
-dNG.pas.net.server.Dispatcher
-"""
-"""n// NOTE
-----------------------------------------------------------------------------
 direct PAS
 Python Application Services
 ----------------------------------------------------------------------------
@@ -20,8 +16,7 @@ http://www.direct-netware.de/redirect.py?licenses;mpl2
 ----------------------------------------------------------------------------
 #echo(pasServerVersion)#
 #echo(__FILEPATH__)#
-----------------------------------------------------------------------------
-NOTE_END //n"""
+"""
 
 from os import path
 from threading import local, BoundedSemaphore
@@ -152,7 +147,7 @@ Run the active handler for the given socket.
 		handler.set_instance_data(self, _socket)
 		handler.start()
 
-		if (self.log_handler != None): self.log_handler.debug("{0!r} started a new thread '{1!r}'".format(self, handler))
+		if (self.log_handler != None): self.log_handler.debug("{0!r} started a new thread '{1!r}'", self, handler, context = "pas_server")
 	#
 
 	def _active_queue(self, _socket):
@@ -275,13 +270,13 @@ call for the local endpoint.
 			#
 				exception = handled_exception.get_cause()
 
-				if (exception == None and self.log_handler != None): self.log_handler.error(handled_exception)
+				if (exception == None and self.log_handler != None): self.log_handler.error(handled_exception, context = "pas_server")
 				else: handled_exception.print_stack_trace()
 			#
 			except Exception as handled_exception:
 			#
 				if (self.log_handler == None): ShutdownException.print_current_stack_trace()
-				else: self.log_handler.error(handled_exception)
+				else: self.log_handler.error(handled_exception, context = "pas_server")
 			#
 		#
 	#
@@ -329,13 +324,13 @@ on the channel's socket will succeed.
 			#
 				exception = handled_exception.get_cause()
 
-				if (exception == None and self.log_handler != None): self.log_handler.error(handled_exception)
+				if (exception == None and self.log_handler != None): self.log_handler.error(handled_exception, context = "pas_server")
 				else: handled_exception.print_stack_trace()
 			#
 			except Exception as handled_exception:
 			#
 				if (self.log_handler == None): ShutdownException.print_current_stack_trace()
-				else: self.log_handler.error(handled_exception)
+				else: self.log_handler.error(handled_exception, context = "pas_server")
 			#
 		#
 	#
@@ -404,7 +399,7 @@ Run the main loop for this server instance.
 :since: v0.1.00
 		"""
 
-		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}.run()- (#echo(__LINE__)#)".format(self))
+		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}.run()- (#echo(__LINE__)#)", self, context = "pas_server")
 
 		self._ensure_thread_local()
 
@@ -433,7 +428,7 @@ Run the main loop for this server instance.
 			if (self.active):
 			#
 				exception = handled_exception.get_cause()
-				if (exception != None and self.log_handler != None): self.log_handler.error(exception)
+				if (exception != None and self.log_handler != None): self.log_handler.error(exception, context = "pas_server")
 			#
 		#
 		except Exception as handled_exception:
@@ -441,7 +436,7 @@ Run the main loop for this server instance.
 			if (self.active):
 			#
 				if (self.log_handler == None): ShutdownException.print_current_stack_trace()
-				else: self.log_handler.error(handled_exception)
+				else: self.log_handler.error(handled_exception, context = "pas_server")
 			#
 		#
 		finally: self.stop()
@@ -457,7 +452,7 @@ Sets the status for the listener.
 :since: v0.1.00
 		"""
 
-		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}.set_active(status)- (#echo(__LINE__)#)".format(self))
+		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}.set_active(status)- (#echo(__LINE__)#)", self, context = "pas_server")
 
 		with self._lock:
 		#
@@ -492,7 +487,7 @@ Stops the listener and unqueues all running sockets.
 
 		if (self.active):
 		#
-			if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}.stop()- (#echo(__LINE__)#)".format(self))
+			if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}.stop()- (#echo(__LINE__)#)", self, context = "pas_server")
 
 			self.active = False
 
@@ -521,7 +516,7 @@ Stops the running server instance by a stopping hook call.
 :since:  v1.0.0
 		"""
 
-		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}.thread_stop()- (#echo(__LINE__)#)".format(self))
+		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}.thread_stop()- (#echo(__LINE__)#)", self, context = "pas_server")
 
 		self.stop()
 		return last_return

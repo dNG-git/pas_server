@@ -2,10 +2,6 @@
 ##j## BOF
 
 """
-dNG.pas.net.server.Handler
-"""
-"""n// NOTE
-----------------------------------------------------------------------------
 direct PAS
 Python Application Services
 ----------------------------------------------------------------------------
@@ -20,8 +16,7 @@ http://www.direct-netware.de/redirect.py?licenses;mpl2
 ----------------------------------------------------------------------------
 #echo(pasServerVersion)#
 #echo(__FILEPATH__)#
-----------------------------------------------------------------------------
-NOTE_END //n"""
+"""
 
 from select import select
 from socket import SHUT_RDWR
@@ -73,7 +68,7 @@ Address of the received data
 		"""
 Address family of the received data
 		"""
-		self.data = ""
+		self.data = Binary.BYTES_TYPE()
 		"""
 Data buffer
 		"""
@@ -163,7 +158,7 @@ Returns data read from the socket.
 :param force_size: True to wait for data until the given size has been
                    received.
 
-:return: (str) Data received
+:return: (bytes) Data received
 :since:  v0.1.00
 		"""
 
@@ -190,8 +185,8 @@ Returns data read from the socket.
 
 				if (len(data) > 0):
 				#
-					self.data += Binary.raw_str(data)
-					data_size = len(Binary.bytes(data))
+					self.data += data
+					data_size = len(self.data)
 				#
 				else: data = None
 			#
@@ -201,7 +196,7 @@ Returns data read from the socket.
 		if (self.data != None and len(self.data) > 0):
 		#
 			_return = self.data
-			self.data = ""
+			self.data = Binary.BYTES_TYPE()
 		#
 
 		if (force_size and data_size < size): raise IOException("Received data size is smaller than the expected size of {0:d} bytes".format(size))
@@ -219,7 +214,7 @@ the data buffer.
 :since: v0.1.00
 		"""
 
-		self.data = (Binary.str(data) + self.data)
+		self.data = (Binary.bytes(data) + self.data)
 	#
 
 	def run(self):
@@ -237,7 +232,7 @@ Placeholder "run()" method calling "_thread_run()". Do not override.
 		except ShutdownException: self.server.stop()
 		except Exception as handled_exception:
 		#
-			if (self.log_handler != None): self.log_handler.error(handled_exception)
+			if (self.log_handler != None): self.log_handler.error(handled_exception, context = "pas_server")
 		#
 
 		self.server.active_unqueue(self.socket)
@@ -304,7 +299,7 @@ Placeholder "_thread_run()" method doing nothing.
 :since: v0.1.00
 		"""
 
-		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}._thread_run()- (#echo(__LINE__)#)".format(self))
+		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}._thread_run()- (#echo(__LINE__)#)", self, context = "pas_server")
 	#
 
 	def write_data(self, data):
@@ -329,7 +324,7 @@ Write data to the socket.
 			try: self.socket.sendall(data)
 			except Exception as handled_exception:
 			#
-				if (self.log_handler != None): self.log_handler.error(handled_exception)
+				if (self.log_handler != None): self.log_handler.error(handled_exception, context = "pas_server")
 				_return = False
 			#
 		#
