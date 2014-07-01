@@ -90,7 +90,7 @@ Destructor __del__(AbstractStreamResponse)
 :since: v0.1.00
 		"""
 
-		self.finish()
+		if (self != None): self.finish()
 	#
 
 	def finish(self):
