@@ -18,6 +18,8 @@ http://www.direct-netware.de/redirect.py?licenses;mpl2
 #echo(__FILEPATH__)#
 """
 
+from dNG.pas.module.named_loader import NamedLoader
+
 class Abstract(object):
 #
 	"""
@@ -41,7 +43,7 @@ Constructor __init__(Abstract)
 :since: v0.1.00
 		"""
 
-		self.log_handler = None
+		self.log_handler = NamedLoader.get_singleton("dNG.pas.data.logging.LogHandler", False)
 		"""
 The LogHandler is called whenever debug messages should be logged or errors
 happened.

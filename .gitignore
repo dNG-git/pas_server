@@ -1,7 +1,7 @@
-_extras
 __py*
 .*
-.pyc
-make*.py*
+*.pyc
 nbproject
-pas_server.*
+/_extras
+/make*.py*
+/pas_server.*
