@@ -109,10 +109,12 @@ python.org: Enter the runtime context related to this object.
 		"""
 python.org: Exit the runtime context related to this object.
 
-:since: v0.1.00
+:return: (bool) True to suppress exceptions
+:since:  v0.1.00
 		"""
 
 		Hook.unregister("dNG.pas.Status.onShutdown", self.stop)
+		return False
 	#
 
 	def get_address(self, flush = False):
