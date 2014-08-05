@@ -589,8 +589,7 @@ Prepare socket returns a bound socket for the given listener data.
 
 		if (listener_type == socket.AF_INET or listener_type == socket.AF_INET6):
 		#
-			listener_data[0] = Binary.str(listener_data[0])
-			listener_data = ( listener_data[0], listener_data[1] )
+			listener_data = ( Binary.str(listener_data[0]), listener_data[1] )
 
 			_return = socket.socket(listener_type, socket.SOCK_STREAM)
 			_return.setblocking(0)
