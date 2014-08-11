@@ -86,7 +86,7 @@ Active counter
 		"""
 Active queue
 		"""
-		self.listener_handle_connections = (listener_socket.family == socket.SOCK_STREAM)
+		self.listener_handle_connections = (listener_socket.type & socket.SOCK_STREAM == socket.SOCK_STREAM)
 		"""
 Listener socket
 		"""
@@ -256,6 +256,8 @@ python.org: Called on listening channels (passive openers) when a connection
 can be established with a new remote endpoint that has issued a connect()
 call for the local endpoint.
 
+Deprecated since version 3.2.
+
 :since: v0.1.00
 		"""
 
@@ -264,7 +266,31 @@ call for the local endpoint.
 			try:
 			#
 				socket_data = self.accept()
-				if (socket_data != None and self._active_queue(socket_data[0])): self._active_activate(socket_data[0])
+				if (socket_data != None): self.handle_accepted(socket_data[0], socket_data[1])
+			#
+			except Exception as handled_exception:
+			#
+				if (self.log_handler == None): ShutdownException.print_current_stack_trace()
+				else: self.log_handler.error(handled_exception, context = "pas_server")
+			#
+		#
+	#
+
+	def handle_accepted(self, sock, addr):
+	#
+		"""
+python.org: Called on listening channels (passive openers) when a connection
+has been established with a new remote endpoint that has issued a connect()
+call for the local endpoint.
+
+:since: v0.1.00
+		"""
+
+		if (self.active and self.listener_handle_connections):
+		#
+			try:
+			#
+				if (self._active_queue(sock)): self._active_activate(sock)
 			#
 			except ShutdownException as handled_exception:
 			#
@@ -550,7 +576,7 @@ Unqueues a previously active socket connection.
 			if (self.listener_handle_connections):
 			#
 				try: _socket.close()
-				except Exception: pass
+				except socket.error: pass
 			#
 		#
 		else: self._lock.release()
@@ -563,8 +589,7 @@ Unqueues a previously active socket connection.
 		"""
 python.org: Called each time around the asynchronous loop to determine
 whether a channel's socket should be added to the list on which write events
-can occur. The default method simply returns True, indicating that by
-default, all channels will be interested in write events.
+can occur.
 
 :return: (bool) Always False
 :since:  v0.1.00
