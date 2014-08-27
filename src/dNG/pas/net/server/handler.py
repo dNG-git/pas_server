@@ -312,7 +312,7 @@ Write data to the socket.
 :param data: Data to be written
 
 :return: (bool) True on success
-:since:  v1.0.0
+:since:  v0.1.00
 		"""
 
 		# pylint: disable=broad-except

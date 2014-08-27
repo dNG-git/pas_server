@@ -539,7 +539,7 @@ Stops the running server instance by a stopping hook call.
 :param last_return: The return value from the last hook called.
 
 :return: (mixed) Return value
-:since:  v1.0.0
+:since:  v0.1.00
 		"""
 
 		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}.thread_stop()- (#echo(__LINE__)#)", self, context = "pas_server")
