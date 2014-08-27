@@ -50,6 +50,7 @@ with TemporaryDirectory(dir = ".") as build_directory:
 	setup(name = "pas_server",
 	      version = get_version(),
 	      description = "Python Application Services",
+	      long_description = """"pas_server" provides the infrastructure to listen on sockets, accept and handle connections or queue them as well as to define an asynchronous handler for active ones.""",
 	      author = "direct Netware Group",
 	      author_email = "web@direct-netware.de",
 	      license = "MPL2",
