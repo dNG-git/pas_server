@@ -78,7 +78,7 @@ Listener state
 		"""
 Active queue handler
 		"""
-		self.actives = BoundedSemaphore(threads_active)
+		self.actives = None
 		"""
 Active counter
 		"""
@@ -131,6 +131,8 @@ Thread if started and active
 		"""
 Thread safety lock
 		"""
+
+		self.actives = BoundedSemaphore(threads_active if (self.listener_handle_connections) else 1)
 	#
 
 	def _active_activate(self, _socket):
@@ -158,7 +160,7 @@ the passive queue.
 
 :param _socket: Active socket resource
 
-:return: (int) Selected queue ID (> -1); True if passively queued.
+:return: (bool) True if queued
 :since:  v0.1.00
 		"""
 
@@ -432,7 +434,7 @@ Run the main loop for this server instance.
 		if (self.stopping_hook != None):
 		#
 			stopping_hook = ("dNG.pas.Status.onShutdown" if (self.stopping_hook == "") else self.stopping_hook)
-			Hook.register(stopping_hook, self.thread_stop)
+			Hook.register_weakref(stopping_hook, self.thread_stop)
 		#
 
 		try:
