@@ -145,13 +145,11 @@ Send data in cache.
 		#
 			if (self.streamer != None and self.stream_mode & AbstractStreamResponse.STREAM_ITERATOR != AbstractStreamResponse.STREAM_ITERATOR):
 			#
-				is_valid = True
-
-				while (is_valid and (not self.streamer.is_eof())):
+				while (not self.streamer.is_eof()):
 				#
 					data = self.streamer.read()
 
-					if (data == None): is_valid = False
+					if (data == None): break
 					else: self.send_data(data)
 				#
 

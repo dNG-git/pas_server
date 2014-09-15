@@ -376,6 +376,23 @@ rarely used.
 		if (self.active): self._active_unqueue_all()
 	#
 
+	def _init(self):
+	#
+		"""
+Initializes the dispatcher and stopping hook.
+
+:since: v0.1.03
+		"""
+
+		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}._init(status)- (#echo(__LINE__)#)", self, context = "pas_server")
+
+		if (self.stopping_hook != None):
+		#
+			stopping_hook = ("dNG.pas.Status.onShutdown" if (self.stopping_hook == "") else self.stopping_hook)
+			Hook.register_weakref(stopping_hook, self.thread_stop)
+		#
+	#
+
 	def start(self):
 	#
 		"""
@@ -384,7 +401,22 @@ Starts the prepared dispatcher in a new thread.
 :since: v0.1.00
 		"""
 
-		Thread(target = self.run).start()
+		if (not self.active):
+		#
+			is_already_active = False
+
+			with self._lock:
+			# Thread safety
+				is_already_active = self.active
+				if (not is_already_active): self.active = True
+			#
+
+			if (not is_already_active):
+			#
+				self._init()
+				Thread(target = self.run).start()
+			#
+		#
 	#
 
 	def _start_listening(self):
@@ -427,26 +459,27 @@ Run the main loop for this server instance.
 :since: v0.1.00
 		"""
 
+		# pylint: disable=broad-except
+
 		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}.run()- (#echo(__LINE__)#)", self, context = "pas_server")
 
 		self._ensure_thread_local()
 
-		if (self.stopping_hook != None):
-		#
-			stopping_hook = ("dNG.pas.Status.onShutdown" if (self.stopping_hook == "") else self.stopping_hook)
-			Hook.register_weakref(stopping_hook, self.thread_stop)
-		#
-
 		try:
 		#
-			with self._lock:
+			if (not self.active):
 			#
-				if (not self.active):
-				#
-					if (self.listener_handle_connections): self._start_listening()
-					self.active = True
+				with self._lock:
+				# Thread safety
+					if (not self.active):
+					#
+						self.active = True
+						self._init()
+					#
 				#
 			#
+
+			if (self.listener_handle_connections): self._start_listening()
 
 			self.add_channel(self.local.sockets)
 			asyncore.loop(5, map = self.local.sockets)
@@ -468,24 +501,6 @@ Run the main loop for this server instance.
 			#
 		#
 		finally: self.stop()
-	#
-
-	def set_active(self, status):
-	#
-		"""
-Sets the status for the listener.
-
-:param status: New status
-
-:since: v0.1.00
-		"""
-
-		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}.set_active(status)- (#echo(__LINE__)#)", self, context = "pas_server")
-
-		with self._lock:
-		#
-			if (self.active != status): self.active = status
-		#
 	#
 
 	def set_log_handler(self, log_handler):
@@ -543,8 +558,6 @@ Stops the running server instance by a stopping hook call.
 :return: (mixed) Return value
 :since:  v0.1.00
 		"""
-
-		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}.thread_stop()- (#echo(__LINE__)#)", self, context = "pas_server")
 
 		self.stop()
 		return last_return

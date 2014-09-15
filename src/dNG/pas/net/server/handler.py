@@ -20,7 +20,7 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 
 from select import select
 from socket import SHUT_RDWR
-import time
+from time import time
 
 from dNG.pas.data.binary import Binary
 from dNG.pas.data.settings import Settings
@@ -170,11 +170,11 @@ Returns data read from the socket.
 
 		data = None
 		data_size = 0
-		timeout_time = (time.time() + self.timeout)
+		timeout_time = (time() + self.timeout)
 
-		try:
+		while ((data == None or (force_size and data_size < size)) and time() < timeout_time):
 		#
-			while ((data == None or (force_size and data_size < size)) and time.time() < timeout_time):
+			try:
 			#
 				select([ self.socket.fileno() ], [ ], [ ], self.timeout)
 
@@ -184,16 +184,16 @@ Returns data read from the socket.
 					self.address_family = self.socket.family
 				#
 				else: data = self.socket.recv(size)
-
-				if (len(data) > 0):
-				#
-					self.data += data
-					data_size = len(self.data)
-				#
-				else: data = None
 			#
+			except Exception: break
+
+			if (len(data) > 0):
+			#
+				self.data += data
+				data_size = len(self.data)
+			#
+			else: data = None
 		#
-		except Exception: pass
 
 		if (self.data != None and len(self.data) > 0):
 		#
