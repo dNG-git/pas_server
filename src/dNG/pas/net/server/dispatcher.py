@@ -239,18 +239,6 @@ sure that these variables are defined.
 		if (not hasattr(self.local, "sockets")): self.local.sockets = { }
 	#
 
-	def get_status(self):
-	#
-		"""
-Return the socket status.
-
-:return: (bool) True if active and listening
-:since:  v0.1.00
-		"""
-
-		return self.active
-	#
-
 	def handle_accept(self):
 	#
 		"""
@@ -391,6 +379,18 @@ Initializes the dispatcher and stopping hook.
 			stopping_hook = ("dNG.pas.Status.onShutdown" if (self.stopping_hook == "") else self.stopping_hook)
 			Hook.register_weakref(stopping_hook, self.thread_stop)
 		#
+	#
+
+	def is_active(self):
+	#
+		"""
+Returns the listener status.
+
+:return: (bool) True if active and listening
+:since:  v0.1.03
+		"""
+
+		return self.active
 	#
 
 	def start(self):
