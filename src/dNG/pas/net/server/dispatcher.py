@@ -638,12 +638,12 @@ Prepare socket returns a bound socket for the given listener data.
 		#
 		elif (listener_type == socket.AF_UNIX):
 		#
-			unixsocket_pathname = path.normpath(Binary.str(listener_data[0]))
-			if (os.access(unixsocket_pathname, os.F_OK)): os.unlink(unixsocket_pathname)
+			unixsocket_path_name = path.normpath(Binary.str(listener_data[0]))
+			if (os.access(unixsocket_path_name, os.F_OK)): os.unlink(unixsocket_path_name)
 
 			_return = socket.socket(listener_type, socket.SOCK_STREAM)
 			if (hasattr(socket, "SO_REUSEADDR")): _return.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-			_return.bind(unixsocket_pathname)
+			_return.bind(unixsocket_path_name)
 
 			socket_chmod = 0
 			socket_chmod_value = int(Settings.get("pas_global_server_chmod_unix_sockets", "600"), 8)
@@ -661,7 +661,7 @@ Prepare socket returns a bound socket for the given listener data.
 			if ((0o002 & socket_chmod_value) == 0o002): socket_chmod |= stat.S_IWOTH
 			if ((0o004 & socket_chmod_value) == 0o004): socket_chmod |= stat.S_IROTH
 
-			os.chmod(unixsocket_pathname, socket_chmod)
+			os.chmod(unixsocket_path_name, socket_chmod)
 		#
 
 		return _return
