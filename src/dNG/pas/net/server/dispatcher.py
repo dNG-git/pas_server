@@ -119,7 +119,7 @@ Passive queue handler
 		"""
 Passive queue maximum
 		"""
-		self.stopping_hook = ("" if (thread_stopping_hook == None) else thread_stopping_hook)
+		self.stopping_hook = ("" if (thread_stopping_hook is None) else thread_stopping_hook)
 		"""
 Stopping hook definition
 		"""
@@ -149,7 +149,7 @@ Run the active handler for the given socket.
 		handler.set_instance_data(self, _socket)
 		handler.start()
 
-		if (self.log_handler != None): self.log_handler.debug("{0!r} started a new thread '{1!r}'", self, handler, context = "pas_server")
+		if (self.log_handler is not None): self.log_handler.debug("{0!r} started a new thread '{1!r}'", self, handler, context = "pas_server")
 	#
 
 	def _active_queue(self, _socket):
@@ -168,7 +168,7 @@ the passive queue.
 
 		if (self.active):
 		#
-			if (self.actives.acquire(self.queue_handler == None)):
+			if (self.actives.acquire(self.queue_handler is None)):
 			#
 				with self._lock:
 				#
@@ -216,7 +216,7 @@ Unqueue all entries from the active queue (canceling running processes).
 
 		with self._lock:
 		#
-			if (self.actives_list != None):
+			if (self.actives_list is not None):
 			#
 				for _socket in self.actives_list:
 				#
@@ -235,7 +235,7 @@ sure that these variables are defined.
 :since: v0.1.00
 		"""
 
-		if (self.local == None): self.local = local()
+		if (self.local is None): self.local = local()
 		if (not hasattr(self.local, "sockets")): self.local.sockets = { }
 	#
 
@@ -256,11 +256,11 @@ Deprecated since version 3.2.
 			try:
 			#
 				socket_data = self.accept()
-				if (socket_data != None): self.handle_accepted(socket_data[0], socket_data[1])
+				if (socket_data is not None): self.handle_accepted(socket_data[0], socket_data[1])
 			#
 			except Exception as handled_exception:
 			#
-				if (self.log_handler == None): ShutdownException.print_current_stack_trace()
+				if (self.log_handler is None): ShutdownException.print_current_stack_trace()
 				else: self.log_handler.error(handled_exception, context = "pas_server")
 			#
 		#
@@ -286,12 +286,12 @@ call for the local endpoint.
 			#
 				exception = handled_exception.get_cause()
 
-				if (exception == None and self.log_handler != None): self.log_handler.error(handled_exception, context = "pas_server")
+				if (exception is None and self.log_handler is not None): self.log_handler.error(handled_exception, context = "pas_server")
 				else: handled_exception.print_stack_trace()
 			#
 			except Exception as handled_exception:
 			#
-				if (self.log_handler == None): ShutdownException.print_current_stack_trace()
+				if (self.log_handler is None): ShutdownException.print_current_stack_trace()
 				else: self.log_handler.error(handled_exception, context = "pas_server")
 			#
 		#
@@ -340,12 +340,12 @@ on the channel's socket will succeed.
 			#
 				exception = handled_exception.get_cause()
 
-				if (exception == None and self.log_handler != None): self.log_handler.error(handled_exception, context = "pas_server")
+				if (exception is None and self.log_handler is not None): self.log_handler.error(handled_exception, context = "pas_server")
 				else: handled_exception.print_stack_trace()
 			#
 			except Exception as handled_exception:
 			#
-				if (self.log_handler == None): ShutdownException.print_current_stack_trace()
+				if (self.log_handler is None): ShutdownException.print_current_stack_trace()
 				else: self.log_handler.error(handled_exception, context = "pas_server")
 			#
 		#
@@ -372,9 +372,9 @@ Initializes the dispatcher and stopping hook.
 :since: v0.1.03
 		"""
 
-		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}._init(status)- (#echo(__LINE__)#)", self, context = "pas_server")
+		if (self.log_handler is not None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}._init(status)- (#echo(__LINE__)#)", self, context = "pas_server")
 
-		if (self.stopping_hook != None):
+		if (self.stopping_hook is not None):
 		#
 			stopping_hook = ("dNG.pas.Status.onShutdown" if (self.stopping_hook == "") else self.stopping_hook)
 			Hook.register_weakref(stopping_hook, self.thread_stop)
@@ -438,7 +438,7 @@ exception.
 		#
 			try:
 			#
-				if (_exception != None): time.sleep(0.2)
+				if (_exception is not None): time.sleep(0.2)
 				_exception = None
 
 				self.listen(self.queue_max)
@@ -448,7 +448,7 @@ exception.
 			except Exception as handled_exception: _exception = handled_exception
 		#
 
-		if (_exception != None): raise _exception
+		if (_exception is not None): raise _exception
 	#
 
 	def run(self):
@@ -461,7 +461,7 @@ Run the main loop for this server instance.
 
 		# pylint: disable=broad-except
 
-		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}.run()- (#echo(__LINE__)#)", self, context = "pas_server")
+		if (self.log_handler is not None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}.run()- (#echo(__LINE__)#)", self, context = "pas_server")
 
 		self._ensure_thread_local()
 
@@ -489,14 +489,14 @@ Run the main loop for this server instance.
 			if (self.active):
 			#
 				exception = handled_exception.get_cause()
-				if (exception != None and self.log_handler != None): self.log_handler.error(exception, context = "pas_server")
+				if (exception is not None and self.log_handler is not None): self.log_handler.error(exception, context = "pas_server")
 			#
 		#
 		except Exception as handled_exception:
 		#
 			if (self.active):
 			#
-				if (self.log_handler == None): ShutdownException.print_current_stack_trace()
+				if (self.log_handler is None): ShutdownException.print_current_stack_trace()
 				else: self.log_handler.error(handled_exception, context = "pas_server")
 			#
 		#
@@ -530,11 +530,11 @@ Stops the listener and unqueues all running sockets.
 
 		if (self.active):
 		#
-			if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}.stop()- (#echo(__LINE__)#)", self, context = "pas_server")
+			if (self.log_handler is not None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}.stop()- (#echo(__LINE__)#)", self, context = "pas_server")
 
 			self.active = False
 
-			if (self.stopping_hook != None and len(self.stopping_hook) > 0): Hook.unregister(self.stopping_hook, self.thread_stop)
+			if (self.stopping_hook is not None and len(self.stopping_hook) > 0): Hook.unregister(self.stopping_hook, self.thread_stop)
 			self.stopping_hook = ""
 
 			self._lock.release()
@@ -581,7 +581,7 @@ Unqueues a previously active socket connection.
 
 		self._lock.acquire()
 
-		if (queue != None and _socket in queue):
+		if (queue is not None and _socket in queue):
 		#
 			queue.remove(_socket)
 			self._lock.release()

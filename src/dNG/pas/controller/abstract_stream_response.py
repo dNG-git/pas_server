@@ -90,7 +90,7 @@ Destructor __del__(AbstractStreamResponse)
 :since: v0.1.00
 		"""
 
-		if (self != None): self.finish()
+		if (self is not None): self.finish()
 	#
 
 	def finish(self):
@@ -130,7 +130,7 @@ Returns true if a streamer has been set.
 :since:  v0.1.01
 		"""
 
-		return (self.streamer != None)
+		return (self.streamer is not None)
 	#
 
 	def send(self):
@@ -143,20 +143,20 @@ Send data in cache.
 
 		if (self.active):
 		#
-			if (self.streamer != None and self.stream_mode & AbstractStreamResponse.STREAM_ITERATOR != AbstractStreamResponse.STREAM_ITERATOR):
+			if (self.streamer is not None and self.stream_mode & AbstractStreamResponse.STREAM_ITERATOR != AbstractStreamResponse.STREAM_ITERATOR):
 			#
 				while (not self.streamer.is_eof()):
 				#
 					data = self.streamer.read()
 
-					if (data == None): break
+					if (data is None): break
 					else: self.send_data(data)
 				#
 
 				self.streamer.close()
 				self.streamer = None
 			#
-			elif (self.data != None):
+			elif (self.data is not None):
 			#
 				self._write(self.data)
 				self.data = None
@@ -180,7 +180,7 @@ Sends the given data as part of the response.
 
 			if (self.stream_mode == AbstractStreamResponse.STREAM_NONE):
 			#
-				if (self.data == None): self.data = Binary.BYTES_TYPE()
+				if (self.data is None): self.data = Binary.BYTES_TYPE()
 				self.data += data
 			#
 			else: self._write(data)

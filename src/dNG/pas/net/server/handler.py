@@ -172,13 +172,13 @@ Returns data read from the socket.
 		data_size = 0
 		timeout_time = (time() + self.timeout)
 
-		while ((data == None or (force_size and data_size < size)) and time() < timeout_time):
+		while ((data is None or (force_size and data_size < size)) and time() < timeout_time):
 		#
 			try:
 			#
 				select([ self.socket.fileno() ], [ ], [ ], self.timeout)
 
-				if (self.address == None):
+				if (self.address is None):
 				#
 					( data, self.address ) = self.socket.recvfrom(size)
 					self.address_family = self.socket.family
@@ -195,7 +195,7 @@ Returns data read from the socket.
 			else: data = None
 		#
 
-		if (self.data != None and len(self.data) > 0):
+		if (self.data is not None and len(self.data) > 0):
 		#
 			_return = self.data
 			self.data = Binary.BYTES_TYPE()
@@ -234,7 +234,7 @@ Placeholder "run()" method calling "_thread_run()". Do not override.
 		except ShutdownException: self.server.stop()
 		except Exception as handled_exception:
 		#
-			if (self.log_handler != None): self.log_handler.error(handled_exception, context = "pas_server")
+			if (self.log_handler is not None): self.log_handler.error(handled_exception, context = "pas_server")
 		#
 
 		self.server.active_unqueue(self.socket)
@@ -301,7 +301,7 @@ Placeholder "_thread_run()" method doing nothing.
 :since: v0.1.00
 		"""
 
-		if (self.log_handler != None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}._thread_run()- (#echo(__LINE__)#)", self, context = "pas_server")
+		if (self.log_handler is not None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}._thread_run()- (#echo(__LINE__)#)", self, context = "pas_server")
 	#
 
 	def write_data(self, data):
@@ -326,7 +326,7 @@ Write data to the socket.
 			try: self.socket.sendall(data)
 			except Exception as handled_exception:
 			#
-				if (self.log_handler != None): self.log_handler.error(handled_exception, context = "pas_server")
+				if (self.log_handler is not None): self.log_handler.error(handled_exception, context = "pas_server")
 				_return = False
 			#
 		#

@@ -169,7 +169,7 @@ Get the response store.
 		"""
 
 		instance = AbstractResponse.get_instance()
-		return (None if (instance == None) else instance.get_store())
+		return (None if (instance is None) else instance.get_store())
 	#
 #
 

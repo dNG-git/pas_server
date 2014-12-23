@@ -188,7 +188,7 @@ Returns false if the server address is unknown.
 :since:  v0.1.01
 		"""
 
-		return (self.server_host != None)
+		return (self.server_host is not None)
 	#
 #
 
