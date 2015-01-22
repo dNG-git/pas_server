@@ -25,7 +25,7 @@ from dNG.pas.data.supports_mixin import SupportsMixin
 from dNG.pas.runtime.not_implemented_exception import NotImplementedException
 from .abstract_mixin import AbstractMixin
 
-class AbstractRequest(AbstractMixin, SupportsMixin):
+class AbstractRequest(SupportsMixin, AbstractMixin):
 #
 	"""
 This abstract class contains common methods for request implementations.

@@ -21,7 +21,7 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 from dNG.pas.data.supports_mixin import SupportsMixin
 from .abstract_mixin import AbstractMixin
 
-class AbstractInnerRequest(AbstractMixin, SupportsMixin):
+class AbstractInnerRequest(SupportsMixin, AbstractMixin):
 #
 	"""
 This abstract class contains common methods for inner requests usually used
