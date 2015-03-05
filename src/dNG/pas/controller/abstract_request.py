@@ -107,7 +107,7 @@ Reply the request with the given response.
 :since: v0.1.01
 		"""
 
-		response.send()
+		response.send_and_finish()
 	#
 
 	def _supports_listener_data(self):

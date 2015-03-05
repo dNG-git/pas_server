@@ -132,6 +132,17 @@ Sends the prepared response.
 		raise NotImplementedException()
 	#
 
+	def send_and_finish(self):
+	#
+		"""
+Sends the prepared response and finishes all related tasks.
+
+:since: v0.1.03
+		"""
+
+		self.send()
+	#
+
 	def set_log_handler(self, log_handler):
 	#
 		"""
