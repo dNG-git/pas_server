@@ -21,9 +21,11 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 from threading import local
 from weakref import ref
 
+from dNG.pas.data.settings import Settings
 from dNG.pas.data.supports_mixin import SupportsMixin
 from dNG.pas.runtime.io_exception import IOException
 from dNG.pas.runtime.not_implemented_exception import NotImplementedException
+from dNG.pas.runtime.stacked_dict import StackedDict
 
 class AbstractResponse(SupportsMixin):
 #
@@ -61,16 +63,31 @@ happened.
 		"""
 		self.store = { }
 		"""
-Response specific generic cache
+Response specific data store
 		"""
 
 		AbstractResponse._local.weakref_instance = ref(self)
+
+		self.store['dNG.pas.data.Settings'] = StackedDict()
+		self.store['dNG.pas.data.Settings'].add_dict(Settings.get_dict())
+	#
+
+	def get_runtime_settings(self):
+	#
+		"""
+Return the runtime settings dict for the response.
+
+:return: (dict) Response runtime settings dict
+:since:  v0.1.03
+		"""
+
+		return self.store['dNG.pas.data.Settings']
 	#
 
 	def get_store(self):
 	#
 		"""
-Return the generic store for the response.
+Return the data store for the response.
 
 :return: (dict) Response store
 :since:  v0.1.01
@@ -173,7 +190,7 @@ Get the AbstractResponse singleton.
 	def get_instance_store():
 	#
 		"""
-Get the response store.
+Get the response store of the response singleton.
 
 :return: (dict) Response store
 :since:  v0.1.01
