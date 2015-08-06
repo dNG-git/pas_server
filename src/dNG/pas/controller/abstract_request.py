@@ -79,11 +79,6 @@ Do preparations for request handling.
 :since: v0.1.01
 		"""
 
-		"""
-Set source variables. The server timezone will be changed if a user is
-logged in and/or its timezone is identified.
-		"""
-
 		raise NotImplementedException()
 	#
 

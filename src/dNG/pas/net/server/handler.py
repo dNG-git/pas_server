@@ -166,13 +166,16 @@ Returns data read from the socket.
 
 		# pylint: disable=broad-except
 
-		_return = ""
+		_return = Binary.BYTES_TYPE()
 
 		data = None
 		data_size = 0
 		timeout_time = (time() + self.timeout)
 
-		while ((data is None or (force_size and data_size < size)) and time() < timeout_time):
+		while (self.socket is not None
+		       and (data is None or (force_size and data_size < size))
+		       and time() < timeout_time
+		      ):
 		#
 			try:
 			#
@@ -290,6 +293,8 @@ Stop the thread by actually closing the underlying socket.
 		try: self.socket.close()
 		except Exception: pass
 
+		self.socket = None
+
 		return last_return
 	#
 
@@ -321,7 +326,7 @@ Write data to the socket.
 
 		data = Binary.bytes(data)
 
-		if (len(data) > 0):
+		if (self.socket is not None and len(data) > 0):
 		#
 			try: self.socket.sendall(data)
 			except Exception as handled_exception:

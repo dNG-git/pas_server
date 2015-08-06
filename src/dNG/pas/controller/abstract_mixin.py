@@ -107,7 +107,7 @@ Returns the value for the specified parameter.
 :since:  v0.1.01
 		"""
 
-		return (self.parameters[name] if (name in self.parameters) else default)
+		return self.parameters.get(name, default)
 	#
 
 	def get_parameters(self):
