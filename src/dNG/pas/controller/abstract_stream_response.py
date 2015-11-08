@@ -104,6 +104,8 @@ Finish transmission and cleanup resources.
 		if (self.active):
 		#
 			self.send()
+			if (self.streamer is not None and hasattr(self.streamer, "close")): self.streamer.close()
+
 			self.active = False
 			self.streamer = None
 		#
