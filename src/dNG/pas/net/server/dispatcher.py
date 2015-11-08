@@ -25,8 +25,10 @@ import os
 import stat
 import socket
 import time
+import traceback
 
 from dNG.pas.data.binary import Binary
+from dNG.pas.data.traced_exception import TracedException
 from dNG.pas.data.settings import Settings
 from dNG.pas.module.named_loader import NamedLoader
 from dNG.pas.plugins.hook import Hook
@@ -253,16 +255,16 @@ Deprecated since version 3.2.
 
 		if (self.active and self.listener_handle_connections):
 		#
-			try:
-			#
-				socket_data = self.accept()
-				if (socket_data is not None): self.handle_accepted(socket_data[0], socket_data[1])
-			#
+			socket_data = None
+
+			try: socket_data = self.accept()
 			except Exception as handled_exception:
 			#
-				if (self.log_handler is None): ShutdownException.print_current_stack_trace()
+				if (self.log_handler is None): TracedException.print_current_stack_trace()
 				else: self.log_handler.error(handled_exception, context = "pas_server")
 			#
+
+			if (socket_data is not None): self.handle_accepted(socket_data[0], socket_data[1])
 		#
 	#
 
@@ -291,7 +293,7 @@ call for the local endpoint.
 			#
 			except Exception as handled_exception:
 			#
-				if (self.log_handler is None): ShutdownException.print_current_stack_trace()
+				if (self.log_handler is None): TracedException.print_current_stack_trace()
 				else: self.log_handler.error(handled_exception, context = "pas_server")
 			#
 		#
@@ -321,6 +323,18 @@ negotiation with the remote endpoint, for example.
 		if (self.active): self._start_listening()
 	#
 
+	def handle_error(self):
+	#
+		"""
+python.org: Called when an exception is raised and not otherwise handled.
+
+:since: v0.1.03
+		"""
+
+		if (self.log_handler is None): TracedException.print_current_stack_trace()
+		else: self.log_handler.error(traceback.format_exc(), context = "pas_server")
+	#
+
 	def handle_read(self):
 	#
 		"""
@@ -345,7 +359,7 @@ on the channel's socket will succeed.
 			#
 			except Exception as handled_exception:
 			#
-				if (self.log_handler is None): ShutdownException.print_current_stack_trace()
+				if (self.log_handler is None): TracedException.print_current_stack_trace()
 				else: self.log_handler.error(handled_exception, context = "pas_server")
 			#
 		#
@@ -496,7 +510,7 @@ Run the main loop for this server instance.
 		#
 			if (self.active):
 			#
-				if (self.log_handler is None): ShutdownException.print_current_stack_trace()
+				if (self.log_handler is None): TracedException.print_current_stack_trace()
 				else: self.log_handler.error(handled_exception, context = "pas_server")
 			#
 		#
