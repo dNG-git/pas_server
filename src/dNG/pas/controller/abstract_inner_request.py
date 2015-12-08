@@ -53,7 +53,7 @@ Chained request parameters
 		"""
 
 		self.supported_features['listener_data'] = self._supports_listener_data
-		self.supported_features['parameters_chained'] = self._supports_listener_data
+		self.supported_features['parameters_chained'] = True
 	#
 
 	def get_parameter_chained(self, name, default = None):
