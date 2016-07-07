@@ -23,11 +23,11 @@ class AbstractMixin(object):
 	"""
 Mixin for abstract classes to implement methods only once.
 
-:author:     direct Netware Group
+:author:     direct Netware Group et al.
 :copyright:  (C) direct Netware Group - All rights reserved
 :package:    pas
 :subpackage: server
-:since:      v0.1.01
+:since:      v0.2.00
 :license:    https://www.direct-netware.de/redirect?licenses;mpl2
              Mozilla Public License, v. 2.0
 	"""
@@ -37,7 +37,7 @@ Mixin for abstract classes to implement methods only once.
 		"""
 Constructor __init__(AbstractRequest)
 
-:since: v0.1.01
+:since: v0.2.00
 		"""
 
 		self.client_host = None
@@ -77,7 +77,7 @@ Server scheme / protocol
 Returns the client host if any.
 
 :return: (str) Client host; None if unknown or not applicable
-:since:  v0.1.01
+:since:  v0.2.00
 		"""
 
 		return self.client_host
@@ -89,7 +89,7 @@ Returns the client host if any.
 Returns the client port if any.
 
 :return: (int) Client port; None if unknown or not applicable
-:since:  v0.1.01
+:since:  v0.2.00
 		"""
 
 		return self.client_port
@@ -104,7 +104,7 @@ Returns the value for the specified parameter.
 :param default: Default value if not set
 
 :return: (mixed) Requested value or default one if undefined
-:since:  v0.1.01
+:since:  v0.2.00
 		"""
 
 		return self.parameters.get(name, default)
@@ -116,7 +116,7 @@ Returns the value for the specified parameter.
 Return all parameters received.
 
 :return: (dict) Request parameters
-:since:  v0.1.01
+:since:  v0.2.00
 		"""
 
 		return self.parameters
@@ -128,7 +128,7 @@ Return all parameters received.
 Returns the server host if any.
 
 :return: (str) Server host; None if unknown or not applicable
-:since:  v0.1.01
+:since:  v0.2.00
 		"""
 
 		return self.server_host
@@ -140,7 +140,7 @@ Returns the server host if any.
 Returns the server port if any.
 
 :return: (int) Server port; None if unknown or not applicable
-:since:  v0.1.01
+:since:  v0.2.00
 		"""
 
 		return self.server_port
@@ -152,7 +152,7 @@ Returns the server port if any.
 Returns the server scheme.
 
 :return: (str) Server scheme / protocol; None if unknown
-:since:  v0.1.01
+:since:  v0.2.00
 		"""
 
 		return self.server_scheme
@@ -165,7 +165,7 @@ Sets the LogHandler.
 
 :param log_handler: LogHandler to use
 
-:since: v0.1.01
+:since: v0.2.00
 		"""
 
 		self.log_handler = log_handler

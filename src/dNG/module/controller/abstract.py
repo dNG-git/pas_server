@@ -18,7 +18,7 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 #echo(__FILEPATH__)#
 """
 
-from dNG.pas.module.named_loader import NamedLoader
+from dNG.module.named_loader import NamedLoader
 
 class Abstract(object):
 #
@@ -26,11 +26,11 @@ class Abstract(object):
 "Abstract" provides methods for a controller based module and service
 implementation.
 
-:author:     direct Netware Group
+:author:     direct Netware Group et al.
 :copyright:  (C) direct Netware Group - All rights reserved
 :package:    pas
 :subpackage: server
-:since:      v0.1.00
+:since:      v0.2.00
 :license:    https://www.direct-netware.de/redirect?licenses;mpl2
              Mozilla Public License, v. 2.0
 	"""
@@ -40,10 +40,10 @@ implementation.
 		"""
 Constructor __init__(Abstract)
 
-:since: v0.1.00
+:since: v0.2.00
 		"""
 
-		self.log_handler = NamedLoader.get_singleton("dNG.pas.data.logging.LogHandler", False)
+		self.log_handler = NamedLoader.get_singleton("dNG.data.logging.LogHandler", False)
 		"""
 The LogHandler is called whenever debug messages should be logged or errors
 happened.
@@ -66,7 +66,7 @@ Initializes the controller from the given request and response.
 :param request: Request object
 :param response: Response object
 
-:since: v0.1.00
+:since: v0.2.00
 		"""
 
 		self.request = request
@@ -80,7 +80,7 @@ Sets the LogHandler.
 
 :param log_handler: LogHandler to use
 
-:since: v0.1.00
+:since: v0.2.00
 		"""
 
 		self.log_handler = log_handler

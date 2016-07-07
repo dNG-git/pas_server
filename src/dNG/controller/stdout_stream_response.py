@@ -18,23 +18,36 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 #echo(__FILEPATH__)#
 """
 
-from dNG.pas.data.traced_exception import TracedException
+import sys
 
-class ShutdownException(TracedException):
+from .abstract_stream_response import AbstractStreamResponse
+
+class StdoutStreamResponse(AbstractStreamResponse):
 #
 	"""
-The "ShutdownException" class is used to stop running server threads.
+This stream response instance will write all data to STDOUT.
 
-:author:     direct Netware Group
+:author:     direct Netware Group et al.
 :copyright:  (C) direct Netware Group - All rights reserved
 :package:    pas
 :subpackage: server
-:since:      v0.1.00
+:since:      v0.2.00
 :license:    https://www.direct-netware.de/redirect?licenses;mpl2
              Mozilla Public License, v. 2.0
 	"""
 
-	pass
+	def _write(self, data):
+	#
+		"""
+Writes the given data.
+
+:param data: Data to be send
+
+:since: v0.2.00
+		"""
+
+		sys.stdout.write(data)
+	#
 #
 
 ##j## EOF

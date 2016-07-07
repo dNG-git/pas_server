@@ -21,22 +21,22 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 from threading import local
 from weakref import ref
 
-from dNG.pas.data.settings import Settings
-from dNG.pas.data.supports_mixin import SupportsMixin
-from dNG.pas.runtime.io_exception import IOException
-from dNG.pas.runtime.not_implemented_exception import NotImplementedException
-from dNG.pas.runtime.stacked_dict import StackedDict
+from dNG.data.settings import Settings
+from dNG.data.supports_mixin import SupportsMixin
+from dNG.runtime.io_exception import IOException
+from dNG.runtime.not_implemented_exception import NotImplementedException
+from dNG.runtime.stacked_dict import StackedDict
 
 class AbstractResponse(SupportsMixin):
 #
 	"""
 This abstract class contains common methods for response implementations.
 
-:author:     direct Netware Group
+:author:     direct Netware Group et al.
 :copyright:  (C) direct Netware Group - All rights reserved
 :package:    pas
 :subpackage: server
-:since:      v0.1.01
+:since:      v0.2.00
 :license:    https://www.direct-netware.de/redirect?licenses;mpl2
              Mozilla Public License, v. 2.0
 	"""
@@ -51,7 +51,7 @@ Thread-local static object
 		"""
 Constructor __init__(AbstractResponse)
 
-:since: v0.1.01
+:since: v0.2.00
 		"""
 
 		SupportsMixin.__init__(self)
@@ -68,8 +68,8 @@ Response specific data store
 
 		AbstractResponse._local.weakref_instance = ref(self)
 
-		self.store['dNG.pas.data.Settings'] = StackedDict()
-		self.store['dNG.pas.data.Settings'].add_dict(Settings.get_dict())
+		self.store['dNG.data.Settings'] = StackedDict()
+		self.store['dNG.data.Settings'].add_dict(Settings.get_dict())
 	#
 
 	def get_runtime_settings(self):
@@ -78,10 +78,10 @@ Response specific data store
 Return the runtime settings dict for the response.
 
 :return: (dict) Response runtime settings dict
-:since:  v0.1.03
+:since:  v0.2.00
 		"""
 
-		return self.store['dNG.pas.data.Settings']
+		return self.store['dNG.data.Settings']
 	#
 
 	def get_store(self):
@@ -90,7 +90,7 @@ Return the runtime settings dict for the response.
 Return the data store for the response.
 
 :return: (dict) Response store
-:since:  v0.1.01
+:since:  v0.2.00
 		"""
 
 		return self.store
@@ -103,7 +103,7 @@ Return the data store for the response.
 
 :param message: Message (will be translated if possible)
 
-:since: v0.1.01
+:since: v0.2.00
 		"""
 
 		raise IOException(message)
@@ -116,7 +116,7 @@ Return the data store for the response.
 
 :param message: Message (will be translated if possible)
 
-:since: v0.1.01
+:since: v0.2.00
 		"""
 
 		raise IOException(message)
@@ -132,7 +132,7 @@ send.
 :param exception: Original exception or formatted string (should be shown in
                   dev mode)
 
-:since: v0.1.01
+:since: v0.2.00
 		"""
 
 		raise IOException(message, exception)
@@ -143,7 +143,7 @@ send.
 		"""
 Sends the prepared response.
 
-:since: v0.1.01
+:since: v0.2.00
 		"""
 
 		raise NotImplementedException()
@@ -154,7 +154,7 @@ Sends the prepared response.
 		"""
 Sends the prepared response and finishes all related tasks.
 
-:since: v0.1.03
+:since: v0.2.00
 		"""
 
 		self.send()
@@ -167,7 +167,7 @@ Sets the LogHandler.
 
 :param log_handler: LogHandler to use
 
-:since: v0.1.01
+:since: v0.2.00
 		"""
 
 		self.log_handler = log_handler
@@ -180,7 +180,7 @@ Sets the LogHandler.
 Get the AbstractResponse singleton.
 
 :return: (object) Object on success
-:since:  v0.1.01
+:since:  v0.2.00
 		"""
 
 		return (AbstractResponse._local.weakref_instance() if (hasattr(AbstractResponse._local, "weakref_instance")) else None)
@@ -193,7 +193,7 @@ Get the AbstractResponse singleton.
 Get the response store of the response singleton.
 
 :return: (dict) Response store
-:since:  v0.1.01
+:since:  v0.2.00
 		"""
 
 		instance = AbstractResponse.get_instance()

@@ -22,12 +22,13 @@ from select import select
 from socket import SHUT_RDWR
 from time import time
 
-from dNG.pas.data.binary import Binary
-from dNG.pas.data.settings import Settings
-from dNG.pas.module.named_loader import NamedLoader
-from dNG.pas.plugins.hook import Hook
-from dNG.pas.runtime.io_exception import IOException
-from dNG.pas.runtime.thread import Thread
+from dNG.data.binary import Binary
+from dNG.data.settings import Settings
+from dNG.module.named_loader import NamedLoader
+from dNG.plugins.hook import Hook
+from dNG.runtime.io_exception import IOException
+from dNG.runtime.thread import Thread
+
 from .shutdown_exception import ShutdownException
 
 class Handler(Thread):
@@ -35,11 +36,11 @@ class Handler(Thread):
 	"""
 Active thread for the dNG server infrastructure.
 
-:author:     direct Netware Group
+:author:     direct Netware Group et al.
 :copyright:  (C) direct Netware Group - All rights reserved
 :package:    pas
 :subpackage: server
-:since:      v0.1.00
+:since:      v0.2.00
 :license:    https://www.direct-netware.de/redirect?licenses;mpl2
              Mozilla Public License, v. 2.0
 	"""
@@ -51,7 +52,7 @@ Active thread for the dNG server infrastructure.
 		"""
 Constructor __init__(Handler)
 
-:since: v0.1.00
+:since: v0.2.00
 		"""
 
 		Thread.__init__(self)
@@ -72,7 +73,7 @@ Address family of the received data
 		"""
 Data buffer
 		"""
-		self.log_handler = NamedLoader.get_singleton("dNG.pas.data.logging.LogHandler", False)
+		self.log_handler = NamedLoader.get_singleton("dNG.data.logging.LogHandler", False)
 		"""
 The LogHandler is called whenever debug messages should be logged or errors
 happened.
@@ -98,7 +99,7 @@ Request timeout value
 		"""
 python.org: Enter the runtime context related to this object.
 
-:since: v0.1.00
+:since: v0.2.00
 		"""
 
 		Hook.register("dNG.pas.Status.onShutdown", self.stop)
@@ -110,7 +111,7 @@ python.org: Enter the runtime context related to this object.
 python.org: Exit the runtime context related to this object.
 
 :return: (bool) True to suppress exceptions
-:since:  v0.1.00
+:since:  v0.2.00
 		"""
 
 		Hook.unregister("dNG.pas.Status.onShutdown", self.stop)
@@ -125,7 +126,7 @@ Returns the address for the data received.
 :param flush: True to delete the cached address after returning it.
 
 :return: (mixed) Address data based on socket family
-:since:  v0.1.00
+:since:  v0.2.00
 		"""
 
 		_return = self.address
@@ -145,7 +146,7 @@ Returns the address for the data received.
 Returns the socket family for the address.
 
 :return: (int) Socket family
-:since:  v0.1.00
+:since:  v0.2.00
 		"""
 
 		return self.address_family
@@ -161,7 +162,7 @@ Returns data read from the socket.
                    received.
 
 :return: (bytes) Data received
-:since:  v0.1.00
+:since:  v0.2.00
 		"""
 
 		# pylint: disable=broad-except
@@ -216,7 +217,7 @@ the data buffer.
 
 :param data: Data to be buffered
 
-:since: v0.1.00
+:since: v0.2.00
 		"""
 
 		self.data = (Binary.bytes(data) + self.data)
@@ -227,7 +228,7 @@ the data buffer.
 		"""
 Placeholder "run()" method calling "_thread_run()". Do not override.
 
-:since: v0.1.00
+:since: v0.2.00
 		"""
 
 		try:
@@ -252,7 +253,7 @@ Sets relevant instance data for this thread and address connection.
 :param socket: Active socket resource
 
 :return: (mixed) Thread assigned ID if any; False on error
-:since:  v0.1.00
+:since:  v0.2.00
 		"""
 
 		self.server = server
@@ -268,7 +269,7 @@ Sets the LogHandler.
 
 :param log_handler: LogHandler to use
 
-:since: v0.1.00
+:since: v0.2.00
 		"""
 
 		self.log_handler = log_handler
@@ -282,7 +283,7 @@ Stop the thread by actually closing the underlying socket.
 :param params: Parameter specified
 :param last_return: The return value from the last hook called.
 
-:since: v0.1.00
+:since: v0.2.00
 		"""
 
 		# pylint: disable=broad-except
@@ -303,7 +304,7 @@ Stop the thread by actually closing the underlying socket.
 		"""
 Placeholder "_thread_run()" method doing nothing.
 
-:since: v0.1.00
+:since: v0.2.00
 		"""
 
 		if (self.log_handler is not None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}._thread_run()- (#echo(__LINE__)#)", self, context = "pas_server")
@@ -317,7 +318,7 @@ Write data to the socket.
 :param data: Data to be written
 
 :return: (bool) True on success
-:since:  v0.1.00
+:since:  v0.2.00
 		"""
 
 		# pylint: disable=broad-except

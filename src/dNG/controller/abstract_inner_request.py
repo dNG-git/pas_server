@@ -18,7 +18,8 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 #echo(__FILEPATH__)#
 """
 
-from dNG.pas.data.supports_mixin import SupportsMixin
+from dNG.data.supports_mixin import SupportsMixin
+
 from .abstract_mixin import AbstractMixin
 
 class AbstractInnerRequest(SupportsMixin, AbstractMixin):
@@ -27,11 +28,11 @@ class AbstractInnerRequest(SupportsMixin, AbstractMixin):
 This abstract class contains common methods for inner requests usually used
 for redirection.
 
-:author:     direct Netware Group
+:author:     direct Netware Group et al.
 :copyright:  (C) direct Netware Group - All rights reserved
 :package:    pas
 :subpackage: server
-:since:      v0.1.01
+:since:      v0.2.00
 :license:    https://www.direct-netware.de/redirect?licenses;mpl2
              Mozilla Public License, v. 2.0
 	"""
@@ -41,7 +42,7 @@ for redirection.
 		"""
 Constructor __init__(AbstractInnerRequest)
 
-:since: v0.1.01
+:since: v0.2.00
 		"""
 
 		AbstractMixin.__init__(self)
@@ -65,7 +66,7 @@ Returns the value for the specified parameter in a chained request.
 :param default: Default value if not set
 
 :return: (mixed) Requested value or default one if undefined
-:since:  v0.1.01
+:since:  v0.2.00
 		"""
 
 		return (self.parameters_chained[name] if (name in self.parameters_chained) else default)
@@ -77,7 +78,7 @@ Returns the value for the specified parameter in a chained request.
 Return all parameters of a chained request.
 
 :return: (dict) Request parameters chained
-:since: v0.1.01
+:since: v0.2.00
 		"""
 
 		return self.parameters_chained
@@ -90,7 +91,7 @@ Initializes default values from the original request.
 
 :param request: (object) Request instance
 
-:since: v0.1.01
+:since: v0.2.00
 		"""
 
 		self.client_host = request.get_client_host()
@@ -107,7 +108,7 @@ Sets the client host for the inner request.
 
 :param host: Client host
 
-:since: v0.1.01
+:since: v0.2.00
 		"""
 
 		self.client_host = host
@@ -120,7 +121,7 @@ Sets the client port.
 
 :param port: Client port
 
-:since: v0.1.01
+:since: v0.2.00
 		"""
 
 		self.client_port = port
@@ -133,7 +134,7 @@ Sets the server host for the inner request.
 
 :param host: Server host
 
-:since: v0.1.01
+:since: v0.2.00
 		"""
 
 		self.server_host = host
@@ -147,7 +148,7 @@ Sets the value for the given parameter in a chained request.
 :param name: Parameter name
 :param value: Parameter value
 
-:since: v0.1.01
+:since: v0.2.00
 		"""
 
 		self.parameters_chained[name] = value
@@ -160,7 +161,7 @@ Sets the server port.
 
 :param port: Server port
 
-:since: v0.1.01
+:since: v0.2.00
 		"""
 
 		self.server_port = port
@@ -173,7 +174,7 @@ Sets the underlying server scheme.
 
 :param scheme: Server scheme / protocol
 
-:since: v0.1.01
+:since: v0.2.00
 		"""
 
 		self.server_scheme = scheme
@@ -185,7 +186,7 @@ Sets the underlying server scheme.
 Returns false if the server address is unknown.
 
 :return: (bool) True if listener are known.
-:since:  v0.1.01
+:since:  v0.2.00
 		"""
 
 		return (self.server_host is not None)

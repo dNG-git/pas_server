@@ -21,8 +21,9 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 from threading import local
 from weakref import ref
 
-from dNG.pas.data.supports_mixin import SupportsMixin
-from dNG.pas.runtime.not_implemented_exception import NotImplementedException
+from dNG.data.supports_mixin import SupportsMixin
+from dNG.runtime.not_implemented_exception import NotImplementedException
+
 from .abstract_mixin import AbstractMixin
 
 class AbstractRequest(SupportsMixin, AbstractMixin):
@@ -30,11 +31,11 @@ class AbstractRequest(SupportsMixin, AbstractMixin):
 	"""
 This abstract class contains common methods for request implementations.
 
-:author:     direct Netware Group
+:author:     direct Netware Group et al.
 :copyright:  (C) direct Netware Group - All rights reserved
 :package:    pas
 :subpackage: server
-:since:      v0.1.01
+:since:      v0.2.00
 :license:    https://www.direct-netware.de/redirect?licenses;mpl2
              Mozilla Public License, v. 2.0
 	"""
@@ -49,7 +50,7 @@ Thread-local static object
 		"""
 Constructor __init__(AbstractRequest)
 
-:since: v0.1.01
+:since: v0.2.00
 		"""
 
 		AbstractMixin.__init__(self)
@@ -65,7 +66,7 @@ Constructor __init__(AbstractRequest)
 		"""
 Executes the incoming request.
 
-:since: v0.1.01
+:since: v0.2.00
 		"""
 
 		raise NotImplementedException()
@@ -76,7 +77,7 @@ Executes the incoming request.
 		"""
 Do preparations for request handling.
 
-:since: v0.1.01
+:since: v0.2.00
 		"""
 
 		raise NotImplementedException()
@@ -88,7 +89,7 @@ Do preparations for request handling.
 Initializes the matching response instance.
 
 :return: (object) Response object
-:since:  v0.1.01
+:since:  v0.2.00
 		"""
 
 		raise NotImplementedException()
@@ -99,7 +100,7 @@ Initializes the matching response instance.
 		"""
 Reply the request with the given response.
 
-:since: v0.1.01
+:since: v0.2.00
 		"""
 
 		response.send_and_finish()
@@ -111,7 +112,7 @@ Reply the request with the given response.
 Returns false if the server address is unknown.
 
 :return: (bool) True if listener are known.
-:since:  v0.1.01
+:since:  v0.2.00
 		"""
 
 		return (self.server_host is not None)
@@ -124,7 +125,7 @@ Returns false if the server address is unknown.
 Get the AbstractRequest singleton.
 
 :return: (object) Object on success
-:since:  v0.1.01
+:since:  v0.2.00
 		"""
 
 		return (AbstractRequest._local.weakref_instance() if (hasattr(AbstractRequest._local, "weakref_instance")) else None)

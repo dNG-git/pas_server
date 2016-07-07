@@ -20,21 +20,21 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 
 from collections import Iterator
 
-from dNG.pas.data.binary import Binary
-from dNG.pas.data.supports_mixin import SupportsMixin
-from dNG.pas.runtime.not_implemented_exception import NotImplementedException
-from dNG.pas.runtime.value_exception import ValueException
+from dNG.data.binary import Binary
+from dNG.data.supports_mixin import SupportsMixin
+from dNG.runtime.not_implemented_exception import NotImplementedException
+from dNG.runtime.value_exception import ValueException
 
 class AbstractStreamResponse(SupportsMixin):
 #
 	"""
 A stream response reads data from a streamer and writes it to a response object.
 
-:author:     direct Netware Group
+:author:     direct Netware Group et al.
 :copyright:  (C) direct Netware Group - All rights reserved
 :package:    pas
 :subpackage: server
-:since:      v0.1.00
+:since:      v0.2.00
 :license:    https://www.direct-netware.de/redirect?licenses;mpl2
              Mozilla Public License, v. 2.0
 	"""
@@ -55,7 +55,7 @@ Do not stream content
 		"""
 Constructor __init__(AbstractStreamResponse)
 
-:since: v0.1.00
+:since: v0.2.00
 		"""
 
 		SupportsMixin.__init__(self)
@@ -87,7 +87,7 @@ Streamer implementation
 		"""
 Destructor __del__(AbstractStreamResponse)
 
-:since: v0.1.00
+:since: v0.2.00
 		"""
 
 		if (self is not None): self.finish()
@@ -98,7 +98,7 @@ Destructor __del__(AbstractStreamResponse)
 		"""
 Finish transmission and cleanup resources.
 
-:since: v0.1.00
+:since: v0.2.00
 		"""
 
 		if (self.active):
@@ -117,7 +117,7 @@ Finish transmission and cleanup resources.
 Returns if the response stream is active.
 
 :return: (bool) True if active
-:since:  v0.1.00
+:since:  v0.2.00
 		"""
 
 		return self.active
@@ -129,7 +129,7 @@ Returns if the response stream is active.
 Returns true if a streamer has been set.
 
 :return: (bool) True if set
-:since:  v0.1.01
+:since:  v0.2.00
 		"""
 
 		return (self.streamer is not None)
@@ -140,7 +140,7 @@ Returns true if a streamer has been set.
 		"""
 Send data in cache.
 
-:since: v0.1.01
+:since: v0.2.00
 		"""
 
 		if (self.active):
@@ -173,7 +173,7 @@ Sends the given data as part of the response.
 
 :param data: Data to send
 
-:since: v0.1.00
+:since: v0.2.00
 		"""
 
 		if (self.active):
@@ -196,7 +196,7 @@ Sets the stream response active.
 
 :param is_active: True if active
 
-:since: v0.1.00
+:since: v0.2.00
 		"""
 
 		self.active = is_active
@@ -208,7 +208,7 @@ Sets the stream response active.
 		"""
 Sets the streamer to create response data when requested.
 
-:since: v0.1.01
+:since: v0.2.00
 		"""
 
 		# pylint: disable=no-member
@@ -227,7 +227,7 @@ Writes the given data.
 
 :param data: Data to be send
 
-:since: v0.1.00
+:since: v0.2.00
 		"""
 
 		raise NotImplementedException()
