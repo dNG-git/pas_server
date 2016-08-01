@@ -21,6 +21,7 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 from dNG.data.supports_mixin import SupportsMixin
 
 from .abstract_mixin import AbstractMixin
+from dNG.runtime.type_exception import TypeException
 
 class AbstractInnerRequest(SupportsMixin, AbstractMixin):
 #
@@ -94,11 +95,15 @@ Initializes default values from the original request.
 :since: v0.2.00
 		"""
 
+		if (not isinstance(request, AbstractMixin)): raise TypeException("Request instance given is invalid")
+
 		self.client_host = request.get_client_host()
 		self.client_port = request.get_client_port()
 		self.server_scheme = request.get_server_scheme()
 		self.server_host = request.get_server_host()
 		self.server_port = request.get_server_port()
+
+		self.parameters_chained = request.get_parameters()
 	#
 
 	def set_client_host(self, host):
