@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-##j## BOF
 
 """
 direct PAS
@@ -28,8 +27,7 @@ from dNG.runtime.not_implemented_exception import NotImplementedException
 from dNG.runtime.stacked_dict import StackedDict
 
 class AbstractResponse(SupportsMixin):
-#
-	"""
+    """
 This abstract class contains common methods for response implementations.
 
 :author:     direct Netware Group et al.
@@ -39,92 +37,86 @@ This abstract class contains common methods for response implementations.
 :since:      v0.2.00
 :license:    https://www.direct-netware.de/redirect?licenses;mpl2
              Mozilla Public License, v. 2.0
-	"""
+    """
 
-	_local = local()
-	"""
+    _local = local()
+    """
 Thread-local static object
-	"""
+    """
 
-	def __init__(self):
-	#
-		"""
+    def __init__(self):
+        """
 Constructor __init__(AbstractResponse)
 
 :since: v0.2.00
-		"""
+        """
 
-		SupportsMixin.__init__(self)
+        SupportsMixin.__init__(self)
 
-		self.log_handler = None
-		"""
+        self.log_handler = None
+        """
 The LogHandler is called whenever debug messages should be logged or errors
 happened.
-		"""
-		self.store = { }
-		"""
+        """
+        self.store = { }
+        """
 Response specific data store
-		"""
+        """
 
-		AbstractResponse._local.weakref_instance = ref(self)
+        AbstractResponse._local.weakref_instance = ref(self)
 
-		self.store['dNG.data.Settings'] = StackedDict()
-		self.store['dNG.data.Settings'].add_dict(Settings.get_dict())
-	#
+        self.store['dNG.data.Settings'] = StackedDict()
+        self.store['dNG.data.Settings'].add_dict(Settings.get_dict())
+    #
 
-	def get_runtime_settings(self):
-	#
-		"""
+    def get_runtime_settings(self):
+        """
 Return the runtime settings dict for the response.
 
 :return: (dict) Response runtime settings dict
 :since:  v0.2.00
-		"""
+        """
 
-		return self.store['dNG.data.Settings']
-	#
+        return self.store['dNG.data.Settings']
+    #
 
-	def get_store(self):
-	#
-		"""
+    def get_store(self):
+        """
 Return the data store for the response.
 
 :return: (dict) Response store
 :since:  v0.2.00
-		"""
+        """
 
-		return self.store
-	#
+        return self.store
+    #
 
-	def handle_critical_error(self, message):
-	#
-		"""
+    def handle_critical_error(self, message):
+        """
 "handle_critical_error()" is called to send a critical error message.
 
 :param message: Message (will be translated if possible)
 
 :since: v0.2.00
-		"""
+        """
 
-		raise IOException(message)
-	#
+        raise IOException(message)
+    #
 
-	def handle_error(self, message):
-	#
-		"""
+    def handle_error(self, message):
+        """
 "handle_error()" is called to send a error message.
 
 :param message: Message (will be translated if possible)
 
 :since: v0.2.00
-		"""
+        """
 
-		raise IOException(message)
-	#
+        raise IOException(message)
+    #
 
-	def handle_exception(self, message, exception):
-	#
-		"""
+    def handle_exception(self, message, exception):
+        """
 "handle_exception()" is called if an exception occurs and should be
 send.
 
@@ -133,72 +125,65 @@ send.
                   dev mode)
 
 :since: v0.2.00
-		"""
+        """
 
-		raise IOException(message, exception)
-	#
+        raise IOException(message, exception)
+    #
 
-	def send(self):
-	#
-		"""
+    def send(self):
+        """
 Sends the prepared response.
 
 :since: v0.2.00
-		"""
+        """
 
-		raise NotImplementedException()
-	#
+        raise NotImplementedException()
+    #
 
-	def send_and_finish(self):
-	#
-		"""
+    def send_and_finish(self):
+        """
 Sends the prepared response and finishes all related tasks.
 
 :since: v0.2.00
-		"""
+        """
 
-		self.send()
-	#
+        self.send()
+    #
 
-	def set_log_handler(self, log_handler):
-	#
-		"""
+    def set_log_handler(self, log_handler):
+        """
 Sets the LogHandler.
 
 :param log_handler: LogHandler to use
 
 :since: v0.2.00
-		"""
+        """
 
-		self.log_handler = log_handler
-	#
+        self.log_handler = log_handler
+    #
 
-	@staticmethod
-	def get_instance():
-	#
-		"""
+    @staticmethod
+    def get_instance():
+        """
 Get the AbstractResponse singleton.
 
 :return: (object) Object on success
 :since:  v0.2.00
-		"""
+        """
 
-		return (AbstractResponse._local.weakref_instance() if (hasattr(AbstractResponse._local, "weakref_instance")) else None)
-	#
+        return (AbstractResponse._local.weakref_instance() if (hasattr(AbstractResponse._local, "weakref_instance")) else None)
+    #
 
-	@staticmethod
-	def get_instance_store():
-	#
-		"""
+    @staticmethod
+    def get_instance_store():
+        """
 Get the response store of the response singleton.
 
 :return: (dict) Response store
 :since:  v0.2.00
-		"""
+        """
 
-		instance = AbstractResponse.get_instance()
-		return (None if (instance is None) else instance.get_store())
-	#
+        instance = AbstractResponse.get_instance()
+        return (None if (instance is None) else instance.get_store())
+    #
 #
-
-##j## EOF

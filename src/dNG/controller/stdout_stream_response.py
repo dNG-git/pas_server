@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-##j## BOF
 
 """
 direct PAS
@@ -23,8 +22,7 @@ import sys
 from .abstract_stream_response import AbstractStreamResponse
 
 class StdoutStreamResponse(AbstractStreamResponse):
-#
-	"""
+    """
 This stream response instance will write all data to STDOUT.
 
 :author:     direct Netware Group et al.
@@ -34,20 +32,17 @@ This stream response instance will write all data to STDOUT.
 :since:      v0.2.00
 :license:    https://www.direct-netware.de/redirect?licenses;mpl2
              Mozilla Public License, v. 2.0
-	"""
+    """
 
-	def _write(self, data):
-	#
-		"""
+    def _write(self, data):
+        """
 Writes the given data.
 
 :param data: Data to be send
 
 :since: v0.2.00
-		"""
+        """
 
-		sys.stdout.write(data)
-	#
+        sys.stdout.write(data)
+    #
 #
-
-##j## EOF

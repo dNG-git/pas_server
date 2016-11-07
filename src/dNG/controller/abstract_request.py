@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-##j## BOF
 
 """
 direct PAS
@@ -27,8 +26,7 @@ from dNG.runtime.not_implemented_exception import NotImplementedException
 from .abstract_mixin import AbstractMixin
 
 class AbstractRequest(SupportsMixin, AbstractMixin):
-#
-	"""
+    """
 This abstract class contains common methods for request implementations.
 
 :author:     direct Netware Group et al.
@@ -38,98 +36,89 @@ This abstract class contains common methods for request implementations.
 :since:      v0.2.00
 :license:    https://www.direct-netware.de/redirect?licenses;mpl2
              Mozilla Public License, v. 2.0
-	"""
+    """
 
-	_local = local()
-	"""
+    _local = local()
+    """
 Thread-local static object
-	"""
+    """
 
-	def __init__(self):
-	#
-		"""
+    def __init__(self):
+        """
 Constructor __init__(AbstractRequest)
 
 :since: v0.2.00
-		"""
+        """
 
-		AbstractMixin.__init__(self)
-		SupportsMixin.__init__(self)
+        AbstractMixin.__init__(self)
+        SupportsMixin.__init__(self)
 
-		AbstractRequest._local.weakref_instance = ref(self)
+        AbstractRequest._local.weakref_instance = ref(self)
 
-		self.supported_features['listener_data'] = self._supports_listener_data
-	#
+        self.supported_features['listener_data'] = self._supports_listener_data
+    #
 
-	def execute(self):
-	#
-		"""
+    def execute(self):
+        """
 Executes the incoming request.
 
 :since: v0.2.00
-		"""
+        """
 
-		raise NotImplementedException()
-	#
+        raise NotImplementedException()
+    #
 
-	def init(self):
-	#
-		"""
+    def init(self):
+        """
 Do preparations for request handling.
 
 :since: v0.2.00
-		"""
+        """
 
-		raise NotImplementedException()
-	#
+        raise NotImplementedException()
+    #
 
-	def _init_response(self):
-	#
-		"""
+    def _init_response(self):
+        """
 Initializes the matching response instance.
 
 :return: (object) Response object
 :since:  v0.2.00
-		"""
+        """
 
-		raise NotImplementedException()
-	#
+        raise NotImplementedException()
+    #
 
-	def _respond(self, response):
-	#
-		"""
+    def _respond(self, response):
+        """
 Reply the request with the given response.
 
 :since: v0.2.00
-		"""
+        """
 
-		response.send_and_finish()
-	#
+        response.send_and_finish()
+    #
 
-	def _supports_listener_data(self):
-	#
-		"""
+    def _supports_listener_data(self):
+        """
 Returns false if the server address is unknown.
 
 :return: (bool) True if listener are known.
 :since:  v0.2.00
-		"""
+        """
 
-		return (self.server_host is not None)
-	#
+        return (self.server_host is not None)
+    #
 
-	@staticmethod
-	def get_instance():
-	#
-		"""
+    @staticmethod
+    def get_instance():
+        """
 Get the AbstractRequest singleton.
 
 :return: (object) Object on success
 :since:  v0.2.00
-		"""
+        """
 
-		return (AbstractRequest._local.weakref_instance() if (hasattr(AbstractRequest._local, "weakref_instance")) else None)
-	#
+        return (AbstractRequest._local.weakref_instance() if (hasattr(AbstractRequest._local, "weakref_instance")) else None)
+    #
 #
-
-##j## EOF
