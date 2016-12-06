@@ -17,6 +17,8 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 #echo(__FILEPATH__)#
 """
 
+# pylint: disable=import-error, no-name-in-module
+
 from select import select
 from socket import SHUT_RDWR
 from time import time
@@ -211,6 +213,8 @@ Placeholder "run()" method calling "_thread_run()". Do not override.
 
 :since: v0.2.00
         """
+
+        # pylint: disable=broad-except
 
         try:
             with self: self._thread_run()

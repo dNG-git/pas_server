@@ -17,6 +17,8 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 #echo(__FILEPATH__)#
 """
 
+# pylint: disable=import-error, no-name-in-module
+
 from os import path
 from threading import local, BoundedSemaphore
 import asyncore
@@ -235,6 +237,8 @@ Deprecated since version 3.2.
 :since: v0.2.00
         """
 
+        # pylint: disable=broad-except
+
         if (self.active and self.listener_handle_connections):
             socket_data = None
 
@@ -256,6 +260,8 @@ call for the local endpoint.
 
 :since: v0.2.00
         """
+
+        # pylint: disable=broad-except
 
         if (self.active and self.listener_handle_connections):
             try:
@@ -312,6 +318,8 @@ on the channel's socket will succeed.
 
 :since: v0.2.00
         """
+
+        # pylint: disable=broad-except
 
         if ((not self.listener_handle_connections) and self.active):
             try:
