@@ -70,7 +70,7 @@ Executes the incoming request.
         raise NotImplementedException()
     #
 
-    def init(self):
+    def _init_request(self):
         """
 Do preparations for request handling.
 

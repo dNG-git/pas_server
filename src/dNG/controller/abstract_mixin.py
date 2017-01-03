@@ -17,6 +17,8 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 #echo(__FILEPATH__)#
 """
 
+from dNG.runtime.type_exception import TypeException
+
 class AbstractMixin(object):
     """
 Mixin for abstract classes to implement methods only once.
@@ -94,7 +96,7 @@ Returns the client port if any.
         """
 Returns the value for the specified parameter.
 
-:param key: Parameter name
+:param name: Parameter name
 :param default: Default value if not set
 
 :return: (mixed) Requested value or default one if undefined
@@ -146,6 +148,24 @@ Returns the server scheme.
         """
 
         return self.server_scheme
+    #
+
+    def init(self, connection_or_request):
+        """
+Initializes default values from the a connection or request instance.
+
+:param connection_or_request: (object) Connection or request instance
+
+:since: v0.2.00
+        """
+
+        if (not isinstance(connection_or_request, AbstractMixin)): raise TypeException("Request instance given is invalid")
+
+        self.client_host = connection_or_request.get_client_host()
+        self.client_port = connection_or_request.get_client_port()
+        self.server_scheme = connection_or_request.get_server_scheme()
+        self.server_host = connection_or_request.get_server_host()
+        self.server_port = connection_or_request.get_server_port()
     #
 
     def set_log_handler(self, log_handler):

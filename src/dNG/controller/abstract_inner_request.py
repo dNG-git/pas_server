@@ -20,7 +20,7 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 # pylint: disable=import-error, no-name-in-module
 
 from dNG.data.supports_mixin import SupportsMixin
-from dNG.runtime.type_exception import TypeException
+from dNG.runtime.not_implemented_exception import NotImplementedException
 
 from .abstract_mixin import AbstractMixin
 
@@ -82,24 +82,28 @@ Return all parameters of a chained request.
         return self.parameters_chained
     #
 
-    def init(self, request):
+    def init(self, connection_or_request):
         """
-Initializes default values from the original request.
+Initializes default values from the a connection or request instance.
 
-:param request: (object) Request instance
+:param connection_or_request: (object) Connection or request instance
 
 :since: v0.2.00
         """
 
-        if (not isinstance(request, AbstractMixin)): raise TypeException("Request instance given is invalid")
+        AbstractMixin.init(self, connection_or_request)
 
-        self.client_host = request.get_client_host()
-        self.client_port = request.get_client_port()
-        self.server_scheme = request.get_server_scheme()
-        self.server_host = request.get_server_host()
-        self.server_port = request.get_server_port()
+        self.parameters_chained = connection_or_request.get_parameters()
+    #
 
-        self.parameters_chained = request.get_parameters()
+    def _init_request(self):
+        """
+Do preparations for request handling.
+
+:since: v0.2.00
+        """
+
+        raise NotImplementedException()
     #
 
     def set_client_host(self, host):
