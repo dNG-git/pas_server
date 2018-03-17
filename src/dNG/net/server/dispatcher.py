@@ -21,6 +21,7 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 
 from os import path
 from threading import local, BoundedSemaphore
+from weakref import proxy, ProxyTypes
 import asyncore
 import os
 import stat
@@ -31,9 +32,9 @@ import traceback
 from dNG.data.binary import Binary
 from dNG.data.settings import Settings
 from dNG.data.traced_exception import TracedException
-from dNG.module.named_loader import NamedLoader
 from dNG.plugins.hook import Hook
 from dNG.runtime.instance_lock import InstanceLock
+from dNG.runtime.named_loader import NamedLoader
 from dNG.runtime.thread import Thread
 
 from .handler import Handler
@@ -49,7 +50,7 @@ of requests transparently.
 :copyright:  (C) direct Netware Group - All rights reserved
 :package:    pas
 :subpackage: server
-:since:      v0.2.00
+:since:      v1.0.0
 :license:    https://www.direct-netware.de/redirect?licenses;mpl2
              Mozilla Public License, v. 2.0
     """
@@ -67,7 +68,7 @@ Constructor __init__(Dispatcher)
 :param threads_queued: Allowed queued threads
 :param thread_stopping_hook: Thread stopping hook definition
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         asyncore.dispatcher.__init__(self, sock = listener_socket)
@@ -108,7 +109,7 @@ Local data handle
         """
 Thread safety lock
         """
-        self.log_handler = NamedLoader.get_singleton("dNG.data.logging.LogHandler", False)
+        self._log_handler = None
         """
 The LogHandler is called whenever debug messages should be logged or errors
 happened.
@@ -135,6 +136,44 @@ Thread safety lock
         """
 
         self.actives = BoundedSemaphore(threads_active if (self.listener_handle_connections) else 1)
+        self.log_handler = NamedLoader.get_singleton("dNG.data.logging.LogHandler", False)
+    #
+
+    @property
+    def is_active(self):
+        """
+Returns the listener status.
+
+:return: (bool) True if active and listening
+:since:  v1.0.0
+        """
+
+        return self.active
+    #
+
+    @property
+    def log_handler(self):
+        """
+Returns the LogHandler.
+
+:return: (object) LogHandler in use
+:since:  v1.0.0
+        """
+
+        return self._log_handler
+    #
+
+    @log_handler.setter
+    def log_handler(self, log_handler):
+        """
+Sets the LogHandler.
+
+:param log_handler: LogHandler to use
+
+:since: v1.0.0
+        """
+
+        self._log_handler = (log_handler if (isinstance(log_handler, ProxyTypes)) else proxy(log_handler))
     #
 
     def _active_activate(self, _socket):
@@ -143,14 +182,14 @@ Run the active handler for the given socket.
 
 :param _socket: Active socket resource
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         handler = self.active_handler()
         handler.set_instance_data(self, _socket)
         handler.start()
 
-        if (self.log_handler is not None): self.log_handler.debug("{0!r} started a new thread '{1!r}'", self, handler, context = "pas_server")
+        if (self._log_handler is not None): self._log_handler.debug("{0!r} started a new thread '{1!r}'", self, handler, context = "pas_server")
     #
 
     def _active_queue(self, _socket):
@@ -161,7 +200,7 @@ the passive queue.
 :param _socket: Active socket resource
 
 :return: (bool) True if queued
-:since:  v0.2.00
+:since:  v1.0.0
         """
 
         _return = False
@@ -192,7 +231,7 @@ Unqueue the given ID from the active queue.
 
 :param _socket: Active socket resource
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         if (self._unqueue(self.actives_list, _socket)): self.actives.release()
@@ -202,7 +241,7 @@ Unqueue the given ID from the active queue.
         """
 Unqueue all entries from the active queue (canceling running processes).
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         with self._lock:
@@ -219,7 +258,7 @@ Unqueue all entries from the active queue (canceling running processes).
 For thread safety some variables are defined per thread. This method makes
 sure that these variables are defined.
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         if (self.local is None): self.local = local()
@@ -234,7 +273,7 @@ call for the local endpoint.
 
 Deprecated since version 3.2.
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         # pylint: disable=broad-except
@@ -244,8 +283,8 @@ Deprecated since version 3.2.
 
             try: socket_data = self.accept()
             except Exception as handled_exception:
-                if (self.log_handler is None): TracedException.print_current_stack_trace()
-                else: self.log_handler.error(handled_exception, context = "pas_server")
+                if (self._log_handler is None): TracedException.print_current_stack_trace()
+                else: self._log_handler.error(handled_exception, context = "pas_server")
             #
 
             if (socket_data is not None): self.handle_accepted(socket_data[0], socket_data[1])
@@ -258,7 +297,7 @@ python.org: Called on listening channels (passive openers) when a connection
 has been established with a new remote endpoint that has issued a connect()
 call for the local endpoint.
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         # pylint: disable=broad-except
@@ -269,11 +308,11 @@ call for the local endpoint.
             except ShutdownException as handled_exception:
                 exception = handled_exception.get_cause()
 
-                if (exception is None and self.log_handler is not None): self.log_handler.error(handled_exception, context = "pas_server")
+                if (exception is None and self._log_handler is not None): self._log_handler.error(handled_exception, context = "pas_server")
                 else: handled_exception.print_stack_trace()
             except Exception as handled_exception:
-                if (self.log_handler is None): TracedException.print_current_stack_trace()
-                else: self.log_handler.error(handled_exception, context = "pas_server")
+                if (self._log_handler is None): TracedException.print_current_stack_trace()
+                else: self._log_handler.error(handled_exception, context = "pas_server")
             #
         #
     #
@@ -282,7 +321,7 @@ call for the local endpoint.
         """
 python.org: Called when the socket is closed.
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         if (self.active): self.stop()
@@ -294,7 +333,7 @@ python.org: Called when the active opener's socket actually makes a
 connection. Might send a "welcome" banner, or initiate a protocol
 negotiation with the remote endpoint, for example.
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         if (self.active): self._start_listening()
@@ -304,11 +343,11 @@ negotiation with the remote endpoint, for example.
         """
 python.org: Called when an exception is raised and not otherwise handled.
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
-        if (self.log_handler is None): TracedException.print_current_stack_trace()
-        else: self.log_handler.error(traceback.format_exc(), context = "pas_server")
+        if (self._log_handler is None): TracedException.print_current_stack_trace()
+        else: self._log_handler.error(traceback.format_exc(), context = "pas_server")
     #
 
     def handle_read(self):
@@ -316,7 +355,7 @@ python.org: Called when an exception is raised and not otherwise handled.
 python.org: Called when the asynchronous loop detects that a "read()" call
 on the channel's socket will succeed.
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         # pylint: disable=broad-except
@@ -327,11 +366,11 @@ on the channel's socket will succeed.
             except ShutdownException as handled_exception:
                 exception = handled_exception.get_cause()
 
-                if (exception is None and self.log_handler is not None): self.log_handler.error(handled_exception, context = "pas_server")
+                if (exception is None and self._log_handler is not None): self._log_handler.error(handled_exception, context = "pas_server")
                 else: handled_exception.print_stack_trace()
             except Exception as handled_exception:
-                if (self.log_handler is None): TracedException.print_current_stack_trace()
-                else: self.log_handler.error(handled_exception, context = "pas_server")
+                if (self._log_handler is None): TracedException.print_current_stack_trace()
+                else: self._log_handler.error(handled_exception, context = "pas_server")
             #
         #
     #
@@ -342,7 +381,7 @@ python.org: Called when there is out of band (OOB) data for a socket
 connection. This will almost never happen, as OOB is tenuously supported and
 rarely used.
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         if (self.active): self._active_unqueue_all()
@@ -352,10 +391,10 @@ rarely used.
         """
 Initializes the dispatcher and stopping hook.
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
-        if (self.log_handler is not None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}._init()- (#echo(__LINE__)#)", self, context = "pas_server")
+        if (self._log_handler is not None): self._log_handler.debug("#echo(__FILEPATH__)# -{0!r}._init()- (#echo(__LINE__)#)", self, context = "pas_server")
 
         if (self.stopping_hook is not None):
             stopping_hook = ("dNG.pas.Status.onShutdown" if (self.stopping_hook == "") else self.stopping_hook)
@@ -363,22 +402,11 @@ Initializes the dispatcher and stopping hook.
         #
     #
 
-    def is_active(self):
-        """
-Returns the listener status.
-
-:return: (bool) True if active and listening
-:since:  v0.2.00
-        """
-
-        return self.active
-    #
-
     def start(self):
         """
 Starts the prepared dispatcher in a new thread.
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         if (not self.active):
@@ -403,7 +431,7 @@ Try to start listening on the prepared socket. Uses the defined startup
 timeout to wait for the socket to become available before throwing an
 exception.
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         # pylint: disable=broad-except,raising-bad-type
@@ -429,12 +457,12 @@ exception.
         """
 Run the main loop for this server instance.
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         # pylint: disable=broad-except
 
-        if (self.log_handler is not None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}.run()- (#echo(__LINE__)#)", self, context = "pas_server")
+        if (self._log_handler is not None): self._log_handler.debug("#echo(__FILEPATH__)# -{0!r}.run()- (#echo(__LINE__)#)", self, context = "pas_server")
 
         self._ensure_thread_local()
 
@@ -456,33 +484,21 @@ Run the main loop for this server instance.
         except ShutdownException as handled_exception:
             if (self.active):
                 exception = handled_exception.get_cause()
-                if (exception is not None and self.log_handler is not None): self.log_handler.error(exception, context = "pas_server")
+                if (exception is not None and self._log_handler is not None): self._log_handler.error(exception, context = "pas_server")
             #
         except Exception as handled_exception:
             if (self.active):
-                if (self.log_handler is None): TracedException.print_current_stack_trace()
-                else: self.log_handler.error(handled_exception, context = "pas_server")
+                if (self._log_handler is None): TracedException.print_current_stack_trace()
+                else: self._log_handler.error(handled_exception, context = "pas_server")
             #
         finally: self.stop()
-    #
-
-    def set_log_handler(self, log_handler):
-        """
-Sets the LogHandler.
-
-:param log_handler: LogHandler to use
-
-:since: v0.2.00
-        """
-
-        self.log_handler = log_handler
     #
 
     def stop(self):
         """
 Stops the listener and unqueues all running sockets.
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         # pylint: disable=broad-except
@@ -490,7 +506,7 @@ Stops the listener and unqueues all running sockets.
         self._lock.acquire()
 
         if (self.active):
-            if (self.log_handler is not None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}.stop()- (#echo(__LINE__)#)", self, context = "pas_server")
+            if (self._log_handler is not None): self._log_handler.debug("#echo(__FILEPATH__)# -{0!r}.stop()- (#echo(__LINE__)#)", self, context = "pas_server")
 
             self.active = False
 
@@ -514,7 +530,7 @@ Stops the running server instance by a stopping hook call.
 :param last_return: The return value from the last hook called.
 
 :return: (mixed) Return value
-:since:  v0.2.00
+:since:  v1.0.0
         """
 
         self.stop()
@@ -529,7 +545,7 @@ Unqueues a previously active socket connection.
 :param id: Queue ID
 
 :return: (bool) True on success
-:since:  v0.2.00
+:since:  v1.0.0
         """
 
         # pylint: disable=broad-except
@@ -560,7 +576,7 @@ whether a channel's socket should be added to the list on which write events
 can occur.
 
 :return: (bool) Always False
-:since:  v0.2.00
+:since:  v1.0.0
         """
 
         return False
@@ -574,7 +590,7 @@ Prepare socket returns a bound socket for the given listener data.
 :param listener_type: Listener type
 :param listener_data: Listener data
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         _return = None

@@ -22,12 +22,13 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 from select import select
 from socket import SHUT_RDWR
 from time import time
+from weakref import proxy, ProxyTypes
 
 from dNG.data.binary import Binary
 from dNG.data.settings import Settings
-from dNG.module.named_loader import NamedLoader
 from dNG.plugins.hook import Hook
 from dNG.runtime.io_exception import IOException
+from dNG.runtime.named_loader import NamedLoader
 from dNG.runtime.thread import Thread
 
 from .shutdown_exception import ShutdownException
@@ -40,7 +41,7 @@ Active thread for the dNG server infrastructure.
 :copyright:  (C) direct Netware Group - All rights reserved
 :package:    pas
 :subpackage: server
-:since:      v0.2.00
+:since:      v1.0.0
 :license:    https://www.direct-netware.de/redirect?licenses;mpl2
              Mozilla Public License, v. 2.0
     """
@@ -51,7 +52,7 @@ Active thread for the dNG server infrastructure.
         """
 Constructor __init__(Handler)
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         Thread.__init__(self)
@@ -72,7 +73,7 @@ Address family of the received data
         """
 Data buffer
         """
-        self.log_handler = NamedLoader.get_singleton("dNG.data.logging.LogHandler", False)
+        self._log_handler = None
         """
 The LogHandler is called whenever debug messages should be logged or errors
 happened.
@@ -90,6 +91,7 @@ Socket instance
 Request timeout value
         """
 
+        self.log_handler = NamedLoader.get_singleton("dNG.data.logging.LogHandler", False)
         if (self.timeout < 1): self.timeout = int(Settings.get("pas_global_socket_data_timeout", 30))
     #
 
@@ -97,7 +99,7 @@ Request timeout value
         """
 python.org: Enter the runtime context related to this object.
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         Hook.register("dNG.pas.Status.onShutdown", self.stop)
@@ -108,11 +110,36 @@ python.org: Enter the runtime context related to this object.
 python.org: Exit the runtime context related to this object.
 
 :return: (bool) True to suppress exceptions
-:since:  v0.2.00
+:since:  v1.0.0
         """
 
         Hook.unregister("dNG.pas.Status.onShutdown", self.stop)
         return False
+    #
+
+    @property
+    def log_handler(self):
+        """
+Returns the LogHandler.
+
+:return: (object) LogHandler in use
+:since:  v1.0.0
+        """
+
+        return self._log_handler
+    #
+
+    @log_handler.setter
+    def log_handler(self, log_handler):
+        """
+Sets the LogHandler.
+
+:param log_handler: LogHandler to use
+
+:since: v1.0.0
+        """
+
+        self._log_handler = (log_handler if (isinstance(log_handler, ProxyTypes)) else proxy(log_handler))
     #
 
     def get_address(self, flush = False):
@@ -122,7 +149,7 @@ Returns the address for the data received.
 :param flush: True to delete the cached address after returning it.
 
 :return: (mixed) Address data based on socket family
-:since:  v0.2.00
+:since:  v1.0.0
         """
 
         _return = self.address
@@ -140,7 +167,7 @@ Returns the address for the data received.
 Returns the socket family for the address.
 
 :return: (int) Socket family
-:since:  v0.2.00
+:since:  v1.0.0
         """
 
         return self.address_family
@@ -155,7 +182,7 @@ Returns data read from the socket.
                    received.
 
 :return: (bytes) Data received
-:since:  v0.2.00
+:since:  v1.0.0
         """
 
         # pylint: disable=broad-except
@@ -201,7 +228,7 @@ the data buffer.
 
 :param data: Data to be buffered
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         self.data = (Binary.bytes(data) + self.data)
@@ -211,7 +238,7 @@ the data buffer.
         """
 Placeholder "run()" method calling "_thread_run()". Do not override.
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         # pylint: disable=broad-except
@@ -220,7 +247,7 @@ Placeholder "run()" method calling "_thread_run()". Do not override.
             with self: self._thread_run()
         except ShutdownException: self.server.stop()
         except Exception as handled_exception:
-            if (self.log_handler is not None): self.log_handler.error(handled_exception, context = "pas_server")
+            if (self._log_handler is not None): self._log_handler.error(handled_exception, context = "pas_server")
         #
 
         self.server.active_unqueue(self.socket)
@@ -234,25 +261,13 @@ Sets relevant instance data for this thread and address connection.
 :param socket: Active socket resource
 
 :return: (mixed) Thread assigned ID if any; False on error
-:since:  v0.2.00
+:since:  v1.0.0
         """
 
         self.server = server
 
         self.socket = socket
         self.socket.settimeout(self.timeout)
-    #
-
-    def set_log_handler(self, log_handler):
-        """
-Sets the LogHandler.
-
-:param log_handler: LogHandler to use
-
-:since: v0.2.00
-        """
-
-        self.log_handler = log_handler
     #
 
     def stop(self, params = None, last_return = None):
@@ -262,7 +277,7 @@ Stop the thread by actually closing the underlying socket.
 :param params: Parameter specified
 :param last_return: The return value from the last hook called.
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         # pylint: disable=broad-except
@@ -282,10 +297,10 @@ Stop the thread by actually closing the underlying socket.
         """
 Placeholder "_thread_run()" method doing nothing.
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
-        if (self.log_handler is not None): self.log_handler.debug("#echo(__FILEPATH__)# -{0!r}._thread_run()- (#echo(__LINE__)#)", self, context = "pas_server")
+        if (self._log_handler is not None): self._log_handler.debug("#echo(__FILEPATH__)# -{0!r}._thread_run()- (#echo(__LINE__)#)", self, context = "pas_server")
     #
 
     def write_data(self, data):
@@ -295,7 +310,7 @@ Write data to the socket.
 :param data: Data to be written
 
 :return: (bool) True on success
-:since:  v0.2.00
+:since:  v1.0.0
         """
 
         # pylint: disable=broad-except
@@ -307,7 +322,7 @@ Write data to the socket.
         if (self.socket is not None and len(data) > 0):
             try: self.socket.sendall(data)
             except Exception as handled_exception:
-                if (self.log_handler is not None): self.log_handler.error(handled_exception, context = "pas_server")
+                if (self._log_handler is not None): self._log_handler.error(handled_exception, context = "pas_server")
                 _return = False
             #
         #

@@ -19,7 +19,9 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 
 # pylint: disable=import-error, no-name-in-module
 
-from dNG.module.named_loader import NamedLoader
+from weakref import proxy, ProxyTypes
+
+from dNG.runtime.named_loader import NamedLoader
 
 class Abstract(object):
     """
@@ -30,7 +32,7 @@ implementation.
 :copyright:  (C) direct Netware Group - All rights reserved
 :package:    pas
 :subpackage: server
-:since:      v0.2.00
+:since:      v1.0.0
 :license:    https://www.direct-netware.de/redirect?licenses;mpl2
              Mozilla Public License, v. 2.0
     """
@@ -39,10 +41,10 @@ implementation.
         """
 Constructor __init__(Abstract)
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
-        self.log_handler = NamedLoader.get_singleton("dNG.data.logging.LogHandler", False)
+        self._log_handler = NamedLoader.get_singleton("dNG.data.logging.LogHandler", False)
         """
 The LogHandler is called whenever debug messages should be logged or errors
 happened.
@@ -57,6 +59,31 @@ Response instance
         """
     #
 
+    @property
+    def log_handler(self):
+        """
+Returns the LogHandler.
+
+:return: (object) LogHandler in use
+:since:  v1.0.0
+        """
+
+        return self._log_handler
+    #
+
+    @log_handler.setter
+    def log_handler(self, log_handler):
+        """
+Sets the LogHandler.
+
+:param log_handler: LogHandler to use
+
+:since: v1.0.0
+        """
+
+        self._log_handler = (log_handler if (isinstance(log_handler, ProxyTypes)) else proxy(log_handler))
+    #
+
     def init(self, request, response):
         """
 Initializes the controller from the given request and response.
@@ -64,22 +91,10 @@ Initializes the controller from the given request and response.
 :param request: Request object
 :param response: Response object
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         self.request = request
         self.response = response
-    #
-
-    def set_log_handler(self, log_handler):
-        """
-Sets the LogHandler.
-
-:param log_handler: LogHandler to use
-
-:since: v0.2.00
-        """
-
-        self.log_handler = log_handler
     #
 #

@@ -27,7 +27,7 @@ Mixin for abstract classes to implement methods only once.
 :copyright:  (C) direct Netware Group - All rights reserved
 :package:    pas
 :subpackage: server
-:since:      v0.2.00
+:since:      v1.0.0
 :license:    https://www.direct-netware.de/redirect?licenses;mpl2
              Mozilla Public License, v. 2.0
     """
@@ -36,60 +36,135 @@ Mixin for abstract classes to implement methods only once.
         """
 Constructor __init__(AbstractRequest)
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
-        self.client_host = None
+        self._client_host = None
         """
 Client host
         """
-        self.client_port = None
+        self._client_port = None
         """
 Client port
         """
-        self.log_handler = None
+        self._log_handler = None
         """
 The LogHandler is called whenever debug messages should be logged or errors
 happened.
         """
-        self.parameters = { }
+        self._parameters = { }
         """
 Request parameters
         """
-        self.server_host = None
+        self._server_host = None
         """
 Server host
         """
-        self.server_port = None
+        self._server_port = None
         """
 Server port
         """
-        self.server_scheme = None
+        self._server_scheme = None
         """
 Server scheme / protocol
         """
     #
 
-    def get_client_host(self):
+    @property
+    def client_host(self):
         """
 Returns the client host if any.
 
 :return: (str) Client host; None if unknown or not applicable
-:since:  v0.2.00
+:since:  v1.0.0
         """
 
-        return self.client_host
+        return self._client_host
     #
 
-    def get_client_port(self):
+    @property
+    def client_port(self):
         """
 Returns the client port if any.
 
 :return: (int) Client port; None if unknown or not applicable
-:since:  v0.2.00
+:since:  v1.0.0
         """
 
-        return self.client_port
+        return self._client_port
+    #
+
+    @property
+    def log_handler(self):
+        """
+Returns the LogHandler.
+
+:return: (object) LogHandler in use
+:since:  v1.0.0
+        """
+
+        return self._log_handler
+    #
+
+    @log_handler.setter
+    def log_handler(self, log_handler):
+        """
+Sets the LogHandler.
+
+:param log_handler: LogHandler to use
+
+:since: v1.0.0
+        """
+
+        self._log_handler = log_handler
+    #
+
+    @property
+    def parameters(self):
+        """
+Return all parameters received.
+
+:return: (dict) Request parameters
+:since:  v1.0.0
+        """
+
+        return self._parameters.copy()
+    #
+
+    @property
+    def server_host(self):
+        """
+Returns the server host if any.
+
+:return: (str) Server host; None if unknown or not applicable
+:since:  v1.0.0
+        """
+
+        return self._server_host
+    #
+
+    @property
+    def server_port(self):
+        """
+Returns the server port if any.
+
+:return: (int) Server port; None if unknown or not applicable
+:since:  v1.0.0
+        """
+
+        return self._server_port
+    #
+
+    @property
+    def server_scheme(self):
+        """
+Returns the server scheme.
+
+:return: (str) Server scheme / protocol; None if unknown
+:since:  v1.0.0
+        """
+
+        return self._server_scheme
     #
 
     def get_parameter(self, name, default = None):
@@ -100,54 +175,10 @@ Returns the value for the specified parameter.
 :param default: Default value if not set
 
 :return: (mixed) Requested value or default one if undefined
-:since:  v0.2.00
+:since:  v1.0.0
         """
 
-        return self.parameters.get(name, default)
-    #
-
-    def get_parameters(self):
-        """
-Return all parameters received.
-
-:return: (dict) Request parameters
-:since:  v0.2.00
-        """
-
-        return self.parameters
-    #
-
-    def get_server_host(self):
-        """
-Returns the server host if any.
-
-:return: (str) Server host; None if unknown or not applicable
-:since:  v0.2.00
-        """
-
-        return self.server_host
-    #
-
-    def get_server_port(self):
-        """
-Returns the server port if any.
-
-:return: (int) Server port; None if unknown or not applicable
-:since:  v0.2.00
-        """
-
-        return self.server_port
-    #
-
-    def get_server_scheme(self):
-        """
-Returns the server scheme.
-
-:return: (str) Server scheme / protocol; None if unknown
-:since:  v0.2.00
-        """
-
-        return self.server_scheme
+        return self._parameters.get(name, default)
     #
 
     def init(self, connection_or_request):
@@ -156,27 +187,15 @@ Initializes default values from the a connection or request instance.
 
 :param connection_or_request: (object) Connection or request instance
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         if (not isinstance(connection_or_request, AbstractMixin)): raise TypeException("Request instance given is invalid")
 
-        self.client_host = connection_or_request.get_client_host()
-        self.client_port = connection_or_request.get_client_port()
-        self.server_scheme = connection_or_request.get_server_scheme()
-        self.server_host = connection_or_request.get_server_host()
-        self.server_port = connection_or_request.get_server_port()
-    #
-
-    def set_log_handler(self, log_handler):
-        """
-Sets the LogHandler.
-
-:param log_handler: LogHandler to use
-
-:since: v0.2.00
-        """
-
-        self.log_handler = log_handler
+        self._client_host = connection_or_request.client_host
+        self._client_port = connection_or_request.client_port
+        self._server_scheme = connection_or_request.server_scheme
+        self._server_host = connection_or_request.server_host
+        self._server_port = connection_or_request.server_port
     #
 #

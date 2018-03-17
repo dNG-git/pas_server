@@ -34,7 +34,7 @@ A stream response reads data from a streamer and writes it to a response object.
 :copyright:  (C) direct Netware Group - All rights reserved
 :package:    pas
 :subpackage: server
-:since:      v0.2.00
+:since:      v1.0.0
 :license:    https://www.direct-netware.de/redirect?licenses;mpl2
              Mozilla Public License, v. 2.0
     """
@@ -54,7 +54,7 @@ Do not stream content
         """
 Constructor __init__(AbstractStreamResponse)
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         SupportsMixin.__init__(self)
@@ -63,7 +63,7 @@ Constructor __init__(AbstractStreamResponse)
         """
 True if ready for output.
         """
-        self.data = None
+        self._data = None
         """
 Data buffer
         """
@@ -71,31 +71,97 @@ Data buffer
         """
 Stream response instead of holding it in a buffer
         """
-        self.stream_mode_supported = isinstance(self, Iterator)
+        self.stream_mode_supported = 0
         """
 Supported streaming mode
         """
-        self.streamer = None
+        self._streamer = None
         """
 Streamer implementation
         """
+
+        if (isinstance(self, Iterator)): self.stream_mode_supported = AbstractStreamResponse.STREAM_ITERATOR
     #
 
     def __del__(self):
         """
 Destructor __del__(AbstractStreamResponse)
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         if (self is not None): self.finish()
+    #
+
+    @property
+    def is_active(self):
+        """
+Returns if the response stream is active.
+
+:return: (bool) True if active
+:since:  v1.0.0
+        """
+
+        return self.active
+    #
+
+    @property
+    def is_streamer_set(self):
+        """
+Returns true if a streamer has been set.
+
+:return: (bool) True if set
+:since:  v1.0.0
+        """
+
+        return (self.streamer is not None)
+    #
+
+    @property
+    def streamer(self):
+        """
+Returns the streamer to create response data when requested.
+
+:return: (object) Streamer object if any
+:since:  v1.0.0
+        """
+
+        return (self._streamer if (self.active) else None)
+    #
+
+    @streamer.setter
+    def streamer(self, streamer):
+        """
+Sets the streamer to create response data when requested.
+
+:since: v1.0.0
+        """
+
+        if (streamer is None): self.stream_mode = 0
+        else:
+            if (streamer is not None and not hasattr(streamer, "read")): raise ValueException("Given streaming object is not supported.")
+            if (self.stream_mode_supported & AbstractStreamResponse.STREAM_ITERATOR == AbstractStreamResponse.STREAM_ITERATOR): self.stream_mode |= AbstractStreamResponse.STREAM_ITERATOR
+        #
+
+        self._streamer = streamer
+    #
+
+    def close(self):
+        """
+Closes the stream response instance and connection if supported.
+
+:since: v1.0.0
+        """
+
+        self.active = False
+        self._data = None
     #
 
     def finish(self):
         """
 Finish transmission and cleanup resources.
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         if (self.active):
@@ -107,38 +173,16 @@ Finish transmission and cleanup resources.
         #
     #
 
-    def is_active(self):
-        """
-Returns if the response stream is active.
-
-:return: (bool) True if active
-:since:  v0.2.00
-        """
-
-        return self.active
-    #
-
-    def is_streamer_set(self):
-        """
-Returns true if a streamer has been set.
-
-:return: (bool) True if set
-:since:  v0.2.00
-        """
-
-        return (self.streamer is not None)
-    #
-
     def send(self):
         """
 Send data in cache.
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         if (self.active):
             if (self.streamer is not None and self.stream_mode & AbstractStreamResponse.STREAM_ITERATOR != AbstractStreamResponse.STREAM_ITERATOR):
-                while (not self.streamer.is_eof()):
+                while (not self.streamer.is_eof):
                     data = self.streamer.read()
 
                     if (data is None): break
@@ -147,9 +191,9 @@ Send data in cache.
 
                 self.streamer.close()
                 self.streamer = None
-            elif (self.data is not None):
-                self._write(self.data)
-                self.data = None
+            elif (self._data is not None):
+                self._write(self._data)
+                self._data = None
             #
         #
     #
@@ -160,46 +204,17 @@ Sends the given data as part of the response.
 
 :param data: Data to send
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         if (self.active):
             data = Binary.bytes(data)
 
             if (self.stream_mode == AbstractStreamResponse.STREAM_NONE):
-                if (self.data is None): self.data = Binary.BYTES_TYPE()
-                self.data += data
+                if (self._data is None): self._data = Binary.BYTES_TYPE()
+                self._data += data
             else: self._write(data)
         #
-    #
-
-    def set_active(self, is_active = True):
-        """
-Sets the stream response active.
-
-:param is_active: True if active
-
-:since: v0.2.00
-        """
-
-        self.active = is_active
-        if (not is_active): self.data = None
-    #
-
-    def set_streamer(self, streamer):
-        """
-Sets the streamer to create response data when requested.
-
-:since: v0.2.00
-        """
-
-        # pylint: disable=no-member
-
-        if (not hasattr(streamer, "read")): raise ValueException("Given streaming object is not supported.")
-        self.streamer = streamer
-
-        if (self.stream_mode_supported & AbstractStreamResponse.STREAM_ITERATOR == AbstractStreamResponse.STREAM_ITERATOR): self.stream_mode |= AbstractStreamResponse.STREAM_ITERATOR
-        if (self.is_supported("streaming")): self.set_stream_mode()
     #
 
     def _write(self, data):
@@ -208,7 +223,7 @@ Writes the given data.
 
 :param data: Data to be send
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         raise NotImplementedException()

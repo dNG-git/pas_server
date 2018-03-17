@@ -20,7 +20,7 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 # pylint: disable=import-error, no-name-in-module
 
 from dNG.data.supports_mixin import SupportsMixin
-from dNG.module.named_loader import NamedLoader
+from dNG.runtime.named_loader import NamedLoader
 
 from .abstract_mixin import AbstractMixin
 
@@ -32,7 +32,7 @@ This abstract class contains common methods to implement a connection.
 :copyright:  (C) direct Netware Group - All rights reserved
 :package:    pas
 :subpackage: server
-:since:      v0.2.00
+:since:      v1.0.0
 :license:    https://www.direct-netware.de/redirect?licenses;mpl2
              Mozilla Public License, v. 2.0
     """
@@ -41,20 +41,20 @@ This abstract class contains common methods to implement a connection.
         """
 Constructor __init__(AbstractConnection)
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         AbstractMixin.__init__(self)
         SupportsMixin.__init__(self)
 
-        self.log_handler = NamedLoader.get_singleton("dNG.data.logging.LogHandler", False)
+        self._log_handler = NamedLoader.get_singleton("dNG.data.logging.LogHandler", False)
     #
 
     def close(self):
         """
 Cleans up and closes this connection.
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         pass

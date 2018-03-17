@@ -36,7 +36,7 @@ This abstract class contains common methods for response implementations.
 :copyright:  (C) direct Netware Group - All rights reserved
 :package:    pas
 :subpackage: server
-:since:      v0.2.00
+:since:      v1.0.0
 :license:    https://www.direct-netware.de/redirect?licenses;mpl2
              Mozilla Public License, v. 2.0
     """
@@ -50,47 +50,74 @@ Thread-local static object
         """
 Constructor __init__(AbstractResponse)
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         SupportsMixin.__init__(self)
 
-        self.log_handler = None
+        self._log_handler = None
         """
 The LogHandler is called whenever debug messages should be logged or errors
 happened.
         """
-        self.store = { }
+        self._store = { }
         """
 Response specific data store
         """
 
         AbstractResponse._local.weakref_instance = ref(self)
 
-        self.store['dNG.data.Settings'] = StackedDict()
-        self.store['dNG.data.Settings'].add_dict(Settings.get_dict())
+        self._store['dNG.data.Settings'] = StackedDict()
+        self._store['dNG.data.Settings'].add_dict(Settings.get_dict())
     #
 
-    def get_runtime_settings(self):
+    @property
+    def log_handler(self):
+        """
+Returns the LogHandler.
+
+:return: (object) LogHandler in use
+:since:  v1.0.0
+        """
+
+        return self._log_handler
+    #
+
+    @log_handler.setter
+    def log_handler(self, log_handler):
+        """
+Sets the LogHandler.
+
+:param log_handler: LogHandler to use
+
+:since: v1.0.0
+        """
+
+        self._log_handler = log_handler
+    #
+
+    @property
+    def runtime_settings(self):
         """
 Return the runtime settings dict for the response.
 
 :return: (dict) Response runtime settings dict
-:since:  v0.2.00
+:since:  v1.0.0
         """
 
         return self.store['dNG.data.Settings']
     #
 
-    def get_store(self):
+    @property
+    def store(self):
         """
 Return the data store for the response.
 
 :return: (dict) Response store
-:since:  v0.2.00
+:since:  v1.0.0
         """
 
-        return self.store
+        return self._store
     #
 
     def handle_critical_error(self, message):
@@ -99,7 +126,7 @@ Return the data store for the response.
 
 :param message: Message (will be translated if possible)
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         raise IOException(message)
@@ -111,7 +138,7 @@ Return the data store for the response.
 
 :param message: Message (will be translated if possible)
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         raise IOException(message)
@@ -126,7 +153,7 @@ send.
 :param exception: Original exception or formatted string (should be shown in
                   dev mode)
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         raise IOException(message, exception)
@@ -136,7 +163,7 @@ send.
         """
 Sends the prepared response.
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         raise NotImplementedException()
@@ -146,22 +173,10 @@ Sends the prepared response.
         """
 Sends the prepared response and finishes all related tasks.
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         self.send()
-    #
-
-    def set_log_handler(self, log_handler):
-        """
-Sets the LogHandler.
-
-:param log_handler: LogHandler to use
-
-:since: v0.2.00
-        """
-
-        self.log_handler = log_handler
     #
 
     @staticmethod
@@ -170,7 +185,7 @@ Sets the LogHandler.
 Get the AbstractResponse singleton.
 
 :return: (object) Object on success
-:since:  v0.2.00
+:since:  v1.0.0
         """
 
         return (AbstractResponse._local.weakref_instance() if (hasattr(AbstractResponse._local, "weakref_instance")) else None)
@@ -182,10 +197,10 @@ Get the AbstractResponse singleton.
 Get the response store of the response singleton.
 
 :return: (dict) Response store
-:since:  v0.2.00
+:since:  v1.0.0
         """
 
         instance = AbstractResponse.get_instance()
-        return (None if (instance is None) else instance.get_store())
+        return (None if (instance is None) else instance.store)
     #
 #

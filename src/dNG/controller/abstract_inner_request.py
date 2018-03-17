@@ -33,7 +33,7 @@ for redirection.
 :copyright:  (C) direct Netware Group - All rights reserved
 :package:    pas
 :subpackage: server
-:since:      v0.2.00
+:since:      v1.0.0
 :license:    https://www.direct-netware.de/redirect?licenses;mpl2
              Mozilla Public License, v. 2.0
     """
@@ -42,19 +42,113 @@ for redirection.
         """
 Constructor __init__(AbstractInnerRequest)
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         AbstractMixin.__init__(self)
         SupportsMixin.__init__(self)
 
-        self.parameters_chained = { }
+        self._parameters_chained = { }
         """
 Chained request parameters
         """
 
         self.supported_features['listener_data'] = self._supports_listener_data
         self.supported_features['parameters_chained'] = True
+    #
+
+    @AbstractMixin.client_host.setter
+    def client_host(self, host):
+        """
+Sets the client host for the inner request.
+
+:param host: Client host
+
+:since: v1.0.0
+        """
+
+        self._client_host = host
+    #
+
+    @AbstractMixin.client_port.setter
+    def client_port(self, port):
+        """
+Sets the client port.
+
+:param port: Client port
+
+:since: v1.0.0
+        """
+
+        self._client_port = port
+    #
+
+    @AbstractMixin.parameters.setter
+    def parameters(self, parameters):
+        """
+Sets all parameters given and if not already defined.
+
+:param parameters: Request parameters
+
+:since: v1.0.0
+        """
+
+        if (len(parameters) > 0):
+            for key in parameters:
+                if (key not in self._parameters): self._parameters[key] = parameters[key]
+            #
+        else: self._parameters = { }
+    #
+
+    @property
+    def parameters_chained(self):
+        """
+Return all parameters of a chained request.
+
+:return: (dict) Request parameters chained
+:since:  v1.0.0
+        """
+
+        return self._parameters_chained
+    #
+
+    @AbstractMixin.server_host.setter
+    def server_host(self, host):
+        """
+Sets the server host for the inner request.
+
+:param host: Server host
+
+:since: v1.0.0
+        """
+
+        self._server_host = host
+    #
+
+    @AbstractMixin.server_host.setter
+    def server_port(self, port):
+        """
+Sets the server port.
+
+:param port: Server port
+
+:since: v1.0.0
+        """
+
+        self._server_port = port
+    #
+
+    @AbstractMixin.server_scheme.setter
+    def server_scheme(self, scheme):
+        """
+Sets the underlying server scheme.
+
+:param scheme: Server scheme / protocol
+
+:since: v1.0.0
+        """
+
+        self._server_scheme = scheme
     #
 
     def get_parameter_chained(self, name, default = None):
@@ -65,21 +159,10 @@ Returns the value for the specified parameter in a chained request.
 :param default: Default value if not set
 
 :return: (mixed) Requested value or default one if undefined
-:since:  v0.2.00
+:since:  v1.0.0
         """
 
-        return (self.parameters_chained[name] if (name in self.parameters_chained) else default)
-    #
-
-    def get_parameters_chained(self):
-        """
-Return all parameters of a chained request.
-
-:return: (dict) Request parameters chained
-:since: v0.2.00
-        """
-
-        return self.parameters_chained
+        return (self._parameters_chained[name] if (name in self._parameters_chained) else default)
     #
 
     def init(self, connection_or_request):
@@ -88,58 +171,36 @@ Initializes default values from the a connection or request instance.
 
 :param connection_or_request: (object) Connection or request instance
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         AbstractMixin.init(self, connection_or_request)
 
-        self.parameters_chained = connection_or_request.get_parameters()
+        parameters = connection_or_request.parameters
+        if (len(parameters) > 0): self.parameters = parameters
     #
 
     def _init_request(self):
         """
 Do preparations for request handling.
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         raise NotImplementedException()
     #
 
-    def set_client_host(self, host):
+    def set_parameter(self, name, value):
         """
-Sets the client host for the inner request.
+Sets the value for the specified parameter.
 
-:param host: Client host
+:param name: Parameter name
+:param value: Parameter value
 
-:since: v0.2.00
-        """
-
-        self.client_host = host
-    #
-
-    def set_client_port(self, port):
-        """
-Sets the client port.
-
-:param port: Client port
-
-:since: v0.2.00
+:since: v1.0.0
         """
 
-        self.client_port = port
-    #
-
-    def set_server_host(self, host):
-        """
-Sets the server host for the inner request.
-
-:param host: Server host
-
-:since: v0.2.00
-        """
-
-        self.server_host = host
+        self._parameters[name] = value
     #
 
     def set_parameter_chained(self, name, value):
@@ -149,34 +210,10 @@ Sets the value for the given parameter in a chained request.
 :param name: Parameter name
 :param value: Parameter value
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
-        self.parameters_chained[name] = value
-    #
-
-    def set_server_port(self, port):
-        """
-Sets the server port.
-
-:param port: Server port
-
-:since: v0.2.00
-        """
-
-        self.server_port = port
-    #
-
-    def set_server_scheme(self, scheme):
-        """
-Sets the underlying server scheme.
-
-:param scheme: Server scheme / protocol
-
-:since: v0.2.00
-        """
-
-        self.server_scheme = scheme
+        self._parameters_chained[name] = value
     #
 
     def _supports_listener_data(self):
@@ -184,7 +221,7 @@ Sets the underlying server scheme.
 Returns false if the server address is unknown.
 
 :return: (bool) True if listener are known.
-:since:  v0.2.00
+:since:  v1.0.0
         """
 
         return (self.server_host is not None)
