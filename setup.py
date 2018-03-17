@@ -16,23 +16,24 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 setup.py
 """
 
-def get_version():
-    """
-Returns the version currently in development.
+from os import path
 
-:return: (str) Version string
-:since:  v0.1.02
-    """
-
-    return "v0.2.00"
-#
+from distutils.core import setup
 
 from dNG.distutils.command.build_py import BuildPy
 from dNG.distutils.command.install_data import InstallData
 from dNG.distutils.temporary_directory import TemporaryDirectory
 
-from distutils.core import setup
-from os import path
+def get_version():
+    """
+Returns the version currently in development.
+
+:return: (str) Version string
+:since:  v0.1.2
+    """
+
+    return "v1.0.0"
+#
 
 with TemporaryDirectory(dir = ".") as build_directory:
     parameters = { "pasServerVersion": get_version() }
@@ -42,7 +43,7 @@ with TemporaryDirectory(dir = ".") as build_directory:
 
     _build_path = path.join(build_directory, "src")
 
-    setup(name = "pas_server",
+    setup(name = "pas-server",
           version = get_version(),
           description = "Python Application Services",
           long_description = """"pas_server" provides the infrastructure to listen on sockets, accept and handle connections or queue them as well as to define an asynchronous handler for active ones.""",
@@ -52,6 +53,8 @@ with TemporaryDirectory(dir = ".") as build_directory:
           url = "https://www.direct-netware.de/redirect?pas;server",
 
           platforms = [ "any" ],
+
+          setup_requires = "dng-builder-suite",
 
           package_dir = { "": _build_path },
           packages = [ "dNG" ],

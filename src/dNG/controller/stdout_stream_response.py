@@ -29,7 +29,7 @@ This stream response instance will write all data to STDOUT.
 :copyright:  (C) direct Netware Group - All rights reserved
 :package:    pas
 :subpackage: server
-:since:      v0.2.00
+:since:      v1.0.0
 :license:    https://www.direct-netware.de/redirect?licenses;mpl2
              Mozilla Public License, v. 2.0
     """
@@ -40,7 +40,7 @@ Writes the given data.
 
 :param data: Data to be send
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         sys.stdout.write(data)
