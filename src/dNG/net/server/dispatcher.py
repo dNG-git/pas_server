@@ -34,6 +34,7 @@ from dNG.data.settings import Settings
 from dNG.data.traced_exception import TracedException
 from dNG.plugins.hook import Hook
 from dNG.runtime.instance_lock import InstanceLock
+from dNG.runtime.io_exception import IOException
 from dNG.runtime.named_loader import NamedLoader
 from dNG.runtime.thread import Thread
 
@@ -515,7 +516,12 @@ Stops the listener and unqueues all running sockets.
 
             self._lock.release()
 
-            try: self.close()
+            try:
+                if (self.listener_socket.family == socket.AF_UNIX):
+                    Dispatcher._remove_unixsocket(self.listener_socket.getsockname())
+                #
+
+                self.close()
             except Exception: pass
 
             self._active_unqueue_all()
@@ -604,10 +610,14 @@ Prepare socket returns a bound socket for the given listener data.
             _return.bind(listener_data)
         elif (listener_type == socket.AF_UNIX):
             unixsocket_path_name = path.normpath(Binary.str(listener_data[0]))
-            if (os.access(unixsocket_path_name, os.F_OK)): os.unlink(unixsocket_path_name)
+
+            if (os.access(unixsocket_path_name, os.F_OK)):
+                if (os.environ.get("DNG_REMOVE_SOCKETS_ON_START") in ( "1", "t", "true", "yes" )):
+                    Dispatcher._remove_unixsocket(unixsocket_path_name)
+                else: raise IOException("UNIX socket file '{0}' already exists".format(unixsocket_path_name))
+            #
 
             _return = socket.socket(listener_type, socket.SOCK_STREAM)
-            if (hasattr(socket, "SO_REUSEADDR")): _return.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             _return.bind(unixsocket_path_name)
 
             socket_chmod = 0
@@ -630,5 +640,30 @@ Prepare socket returns a bound socket for the given listener data.
         #
 
         return _return
+    #
+
+    @staticmethod
+    def _remove_unixsocket(unixsocket_path_name):
+        """
+Removes the UNIX socket file given.
+
+:param unixsocket_path_name: UNIX socket file path and name
+
+:since: v1.0.0
+        """
+
+        if (path.exists(unixsocket_path_name)):
+            if (hasattr(stat, "S_ISSOCK")):
+                if (not stat.S_ISSOCK(os.stat(unixsocket_path_name).st_mode)):
+                    raise IOException("File '{0}' exists but is not a UNIX socket".format(unixsocket_path_name))
+                #
+            #
+
+            if (not os.access(unixsocket_path_name, os.W_OK)):
+                raise IOException("UNIX socket file '{0}' is not writable".format(unixsocket_path_name))
+            #
+
+            os.unlink(unixsocket_path_name)
+        #
     #
 #
