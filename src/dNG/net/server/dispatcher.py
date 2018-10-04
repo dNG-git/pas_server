@@ -306,7 +306,7 @@ call for the local endpoint.
             try:
                 if (self._active_queue(sock)): self._active_activate(sock)
             except ShutdownException as handled_exception:
-                exception = handled_exception.get_cause()
+                exception = handled_exception.cause
 
                 if (exception is None and self._log_handler is not None): self._log_handler.error(handled_exception, context = "pas_server")
                 else: handled_exception.print_stack_trace()
@@ -364,7 +364,7 @@ on the channel's socket will succeed.
             try:
                 if (self._active_queue(self.listener_socket)): self._active_activate(self.listener_socket)
             except ShutdownException as handled_exception:
-                exception = handled_exception.get_cause()
+                exception = handled_exception.cause
 
                 if (exception is None and self._log_handler is not None): self._log_handler.error(handled_exception, context = "pas_server")
                 else: handled_exception.print_stack_trace()
@@ -483,7 +483,7 @@ Run the main loop for this server instance.
             asyncore.loop(5, map = self.local.sockets)
         except ShutdownException as handled_exception:
             if (self.active):
-                exception = handled_exception.get_cause()
+                exception = handled_exception.cause
                 if (exception is not None and self._log_handler is not None): self._log_handler.error(exception, context = "pas_server")
             #
         except Exception as handled_exception:

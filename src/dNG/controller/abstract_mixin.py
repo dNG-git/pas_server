@@ -198,4 +198,17 @@ Initializes default values from the a connection or request instance.
         self._server_host = connection_or_request.server_host
         self._server_port = connection_or_request.server_port
     #
+
+    def set_parameter(self, name, value):
+        """
+Sets the value for the specified parameter.
+
+:param name: Parameter name
+:param value: Parameter value
+
+:since: v1.0.0
+        """
+
+        self._parameters[name] = value
+    #
 #

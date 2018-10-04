@@ -190,19 +190,6 @@ Do preparations for request handling.
         raise NotImplementedException()
     #
 
-    def set_parameter(self, name, value):
-        """
-Sets the value for the specified parameter.
-
-:param name: Parameter name
-:param value: Parameter value
-
-:since: v1.0.0
-        """
-
-        self._parameters[name] = value
-    #
-
     def set_parameter_chained(self, name, value):
         """
 Sets the value for the given parameter in a chained request.

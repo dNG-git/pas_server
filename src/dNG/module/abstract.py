@@ -21,12 +21,15 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 
 from weakref import proxy, ProxyTypes
 
+from dNG.controller.abstract_request import AbstractRequest
+from dNG.controller.abstract_response import AbstractResponse
+from dNG.data.supports_mixin import SupportsMixin
 from dNG.runtime.named_loader import NamedLoader
+from dNG.runtime.not_implemented_exception import NotImplementedException
 
-class Abstract(object):
+class Abstract(SupportsMixin):
     """
-"Abstract" provides methods for a controller based module and service
-implementation.
+"Abstract" provides methods for module and service based implementations.
 
 :author:     direct Netware Group et al.
 :copyright:  (C) direct Netware Group - All rights reserved
@@ -44,10 +47,20 @@ Constructor __init__(Abstract)
 :since: v1.0.0
         """
 
+        SupportsMixin.__init__(self)
+
+        self._executable_method_name = None
+        """
+Method name to be called on execution if set
+        """
         self._log_handler = NamedLoader.get_singleton("dNG.data.logging.LogHandler", False)
         """
 The LogHandler is called whenever debug messages should be logged or errors
 happened.
+        """
+        self._is_result_expected = False
+        """
+True if a result of the executable method is expected
         """
         self.request = None
         """
@@ -57,6 +70,50 @@ Request instance
         """
 Response instance
         """
+    #
+
+    @property
+    def executable_method_name(self):
+        """
+Returns the executable method name used for the given request and response
+instances.
+
+:return: (str) Method name to be executed
+:since:  v1.0.0
+        """
+
+        _return = (self._get_executable_method_name()
+                   if (self._executable_method_name is None) else
+                   self._executable_method_name
+                  )
+
+        return _return
+    #
+
+    @executable_method_name.setter
+    def executable_method_name(self, method_name):
+        """
+Sets the executable method name used for the given request and response
+instances.
+
+:param method_name: Method name to be executed
+
+:since: v1.0.0
+        """
+
+        self._executable_method_name = method_name
+    #
+
+    @property
+    def is_result_expected(self):
+        """
+Returns true if a result of the executable method is expected.
+
+:return: (bool) True if a result is expected
+:since:  v1.0.0
+        """
+
+        return self._is_result_expected
     #
 
     @property
@@ -84,9 +141,61 @@ Sets the LogHandler.
         self._log_handler = (log_handler if (isinstance(log_handler, ProxyTypes)) else proxy(log_handler))
     #
 
-    def init(self, request, response):
+    @property
+    def result(self):
         """
-Initializes the controller from the given request and response.
+Returns the result set.
+
+:return: (mixed) Executable method result
+:since:  v1.0.0
+        """
+
+        raise NotImplementedException()
+    #
+
+    @result.setter
+    def result(self, result):
+        """
+Sets an executable method result.
+
+:param result: Result to be set
+
+:since: v1.0.0
+        """
+
+        raise NotImplementedException()
+    #
+
+    def execute(self):
+        """
+Execute the requested action.
+
+:since: v1.0.0
+        """
+
+        method = getattr(self, self.executable_method_name)
+
+        if (self.is_result_expected):
+            result = method()
+            if (result is not None and self.result is None): self.result = result
+        else: method()
+    #
+
+    def _get_executable_method_name(self):
+        """
+Returns the executable method name used for the given request and response
+instances.
+
+:return: (str) Method name to be executed
+:since:  v1.0.0
+        """
+
+        raise NotImplementedException()
+    #
+
+    def init(self, request = None, response = None):
+        """
+Initializes the module and service from the given request and response.
 
 :param request: Request object
 :param response: Response object
@@ -94,7 +203,14 @@ Initializes the controller from the given request and response.
 :since: v1.0.0
         """
 
-        self.request = request
-        self.response = response
+        self.request = (AbstractRequest.get_instance()
+                        if (request is None) else
+                        request
+                       )
+
+        self.response = (AbstractResponse.get_instance()
+                         if (response is None) else
+                         response
+                        )
     #
 #
