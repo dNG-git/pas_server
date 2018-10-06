@@ -612,7 +612,7 @@ Prepare socket returns a bound socket for the given listener data.
             unixsocket_path_name = path.normpath(Binary.str(listener_data[0]))
 
             if (os.access(unixsocket_path_name, os.F_OK)):
-                if (os.environ.get("DNG_REMOVE_SOCKETS_ON_START") in ( "1", "t", "true", "yes" )):
+                if (os.environ.get("DNG_SERVER_REMOVE_UNIX_SOCKETS_ON_START") in ( "1", "t", "true", "yes" )):
                     Dispatcher._remove_unixsocket(unixsocket_path_name)
                 else: raise IOException("UNIX socket file '{0}' already exists".format(unixsocket_path_name))
             #
