@@ -90,7 +90,7 @@ Active counter
         """
 Active queue
         """
-        self.listener_handle_connections = (listener_socket.type & socket.SOCK_STREAM == socket.SOCK_STREAM)
+        self.listener_handle_connections = (listener_socket.type & socket.SOCK_STREAM)
         """
 Listener socket
         """
@@ -623,18 +623,18 @@ Prepare socket returns a bound socket for the given listener data.
             socket_chmod = 0
             socket_chmod_value = int(Settings.get("pas_global_server_chmod_unix_sockets", "600"), 8)
 
-            if ((1000 & socket_chmod_value) == 1000): socket_chmod |= stat.S_ISVTX
-            if ((2000 & socket_chmod_value) == 2000): socket_chmod |= stat.S_ISGID
-            if ((4000 & socket_chmod_value) == 4000): socket_chmod |= stat.S_ISUID
-            if ((0o100 & socket_chmod_value) == 0o100): socket_chmod |= stat.S_IXUSR
-            if ((0o200 & socket_chmod_value) == 0o200): socket_chmod |= stat.S_IWUSR
-            if ((0o400 & socket_chmod_value) == 0o400): socket_chmod |= stat.S_IRUSR
-            if ((0o010 & socket_chmod_value) == 0o010): socket_chmod |= stat.S_IXGRP
-            if ((0o020 & socket_chmod_value) == 0o020): socket_chmod |= stat.S_IWGRP
-            if ((0o040 & socket_chmod_value) == 0o040): socket_chmod |= stat.S_IRGRP
-            if ((0o001 & socket_chmod_value) == 0o001): socket_chmod |= stat.S_IXOTH
-            if ((0o002 & socket_chmod_value) == 0o002): socket_chmod |= stat.S_IWOTH
-            if ((0o004 & socket_chmod_value) == 0o004): socket_chmod |= stat.S_IROTH
+            if (1000 & socket_chmod_value): socket_chmod |= stat.S_ISVTX
+            if (2000 & socket_chmod_value): socket_chmod |= stat.S_ISGID
+            if (4000 & socket_chmod_value): socket_chmod |= stat.S_ISUID
+            if (0o100 & socket_chmod_value): socket_chmod |= stat.S_IXUSR
+            if (0o200 & socket_chmod_value): socket_chmod |= stat.S_IWUSR
+            if (0o400 & socket_chmod_value): socket_chmod |= stat.S_IRUSR
+            if (0o010 & socket_chmod_value): socket_chmod |= stat.S_IXGRP
+            if (0o020 & socket_chmod_value): socket_chmod |= stat.S_IWGRP
+            if (0o040 & socket_chmod_value): socket_chmod |= stat.S_IRGRP
+            if (0o001 & socket_chmod_value): socket_chmod |= stat.S_IXOTH
+            if (0o002 & socket_chmod_value): socket_chmod |= stat.S_IWOTH
+            if (0o004 & socket_chmod_value): socket_chmod |= stat.S_IROTH
 
             os.chmod(unixsocket_path_name, socket_chmod)
         #

@@ -140,7 +140,7 @@ Sets the streamer to create response data when requested.
         if (streamer is None): self.stream_mode = 0
         else:
             if (streamer is not None and not hasattr(streamer, "read")): raise ValueException("Given streaming object is not supported.")
-            if (self.stream_mode_supported & AbstractStreamResponse.STREAM_ITERATOR == AbstractStreamResponse.STREAM_ITERATOR): self.stream_mode |= AbstractStreamResponse.STREAM_ITERATOR
+            if (self.stream_mode_supported & AbstractStreamResponse.STREAM_ITERATOR): self.stream_mode |= AbstractStreamResponse.STREAM_ITERATOR
         #
 
         self._streamer = streamer
@@ -181,7 +181,7 @@ Send data in cache.
         """
 
         if (self.active):
-            if (self.streamer is not None and self.stream_mode & AbstractStreamResponse.STREAM_ITERATOR != AbstractStreamResponse.STREAM_ITERATOR):
+            if (self.streamer is not None and (not self.stream_mode & AbstractStreamResponse.STREAM_ITERATOR)):
                 while (not self.streamer.is_eof):
                     data = self.streamer.read()
 
