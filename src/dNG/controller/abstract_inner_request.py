@@ -125,7 +125,7 @@ Sets the server host for the inner request.
         self._server_host = host
     #
 
-    @AbstractMixin.server_host.setter
+    @AbstractMixin.server_port.setter
     def server_port(self, port):
         """
 Sets the server port.
