@@ -1,1 +1,6 @@
--e git+http://git.direct-netware.de/pas/plugins/#egg=pas-plugins
+git+https://git.direct-netware.de/dpt/builder_suite/@v1.0.0#egg=dpt-builder-suite
+git+https://git.direct-netware.de/dpt/module_loader/@v1.0.0#egg=dpt-module-loader
+git+https://git.direct-netware.de/dpt/plugins/@v1.0.0#egg=dpt-plugins
+git+https://git.direct-netware.de/dpt/runtime/@v1.0.0#egg=dpt-runtime
+git+https://git.direct-netware.de/dpt/settings/@v1.0.0#egg=dpt-settings
+git+https://git.direct-netware.de/dpt/threading/@v1.0.0#egg=dpt-threading

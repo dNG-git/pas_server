@@ -19,12 +19,13 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 
 # pylint: disable=import-error, no-name-in-module
 
-from collections import Iterator
+try: from collections.abc import Iterator
+except ImportError: from collections import Iterator
 
-from dNG.data.binary import Binary
-from dNG.data.supports_mixin import SupportsMixin
-from dNG.runtime.not_implemented_exception import NotImplementedException
-from dNG.runtime.value_exception import ValueException
+from dpt_runtime.binary import Binary
+from dpt_runtime.not_implemented_exception import NotImplementedException
+from dpt_runtime.supports_mixin import SupportsMixin
+from dpt_runtime.value_exception import ValueException
 
 class AbstractStreamResponse(SupportsMixin):
     """
@@ -67,11 +68,11 @@ True if ready for output.
         """
 Data buffer
         """
-        self.stream_mode = 0
+        self.stream_mode = AbstractStreamResponse.STREAM_NONE
         """
 Stream response instead of holding it in a buffer
         """
-        self.stream_mode_supported = 0
+        self.stream_mode_supported = AbstractStreamResponse.STREAM_NONE
         """
 Supported streaming mode
         """
@@ -80,7 +81,7 @@ Supported streaming mode
 Streamer implementation
         """
 
-        if (isinstance(self, Iterator)): self.stream_mode_supported = AbstractStreamResponse.STREAM_ITERATOR
+        if (isinstance(self, Iterator)): self.stream_mode_supported |= AbstractStreamResponse.STREAM_ITERATOR
     #
 
     def __del__(self):
@@ -90,7 +91,7 @@ Destructor __del__(AbstractStreamResponse)
 :since: v1.0.0
         """
 
-        if (self is not None): self.finish()
+        self.finish()
     #
 
     @property
@@ -103,6 +104,19 @@ Returns if the response stream is active.
         """
 
         return self.active
+    #
+
+    @property
+    def is_self_finishing(self):
+        """
+Returns true if the response stream is finishing itself automatically after
+successful transmission.
+
+:return: (bool) True if finishing itself
+:since:  v1.0.0
+        """
+
+        return (self.stream_mode & AbstractStreamResponse.STREAM_ITERATOR)
     #
 
     @property
@@ -146,17 +160,6 @@ Sets the streamer to create response data when requested.
         self._streamer = streamer
     #
 
-    def close(self):
-        """
-Closes the stream response instance and connection if supported.
-
-:since: v1.0.0
-        """
-
-        self.active = False
-        self._data = None
-    #
-
     def finish(self):
         """
 Finish transmission and cleanup resources.
@@ -165,11 +168,14 @@ Finish transmission and cleanup resources.
         """
 
         if (self.active):
-            self.send()
-            if (self.streamer is not None and hasattr(self.streamer, "close")): self.streamer.close()
-
-            self.active = False
-            self.streamer = None
+            try:
+                self.send()
+                if (self.streamer is not None and hasattr(self.streamer, "close")): self.streamer.close()
+            finally:
+                self.active = False
+                self._data = None
+                self._streamer = None
+            #
         #
     #
 
@@ -188,9 +194,6 @@ Send data in cache.
                     if (data is None): break
                     else: self.send_data(data)
                 #
-
-                self.streamer.close()
-                self.streamer = None
             elif (self._data is not None):
                 self._write(self._data)
                 self._data = None

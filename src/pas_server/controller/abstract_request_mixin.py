@@ -17,9 +17,11 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 #echo(__FILEPATH__)#
 """
 
-from dNG.runtime.type_exception import TypeException
+from dpt_runtime.operation_not_supported_exception import OperationNotSupportedException
+from dpt_runtime.supports_mixin import SupportsMixin
+from dpt_runtime.type_exception import TypeException
 
-class AbstractMixin(object):
+class AbstractRequestMixin(object):
     """
 Mixin for abstract classes to implement methods only once.
 
@@ -38,6 +40,8 @@ Constructor __init__(AbstractRequest)
 
 :since: v1.0.0
         """
+
+        SupportsMixin.__init__(self)
 
         self._client_host = None
         """
@@ -68,6 +72,12 @@ Server port
         """
 Server scheme / protocol
         """
+        self._stream_response = None
+        """
+Stream response instance
+        """
+
+        self.supported_features['stream_response'] = self._supports_stream_response
     #
 
     @property
@@ -167,6 +177,19 @@ Returns the server scheme.
         return self._server_scheme
     #
 
+    @property
+    def stream_response(self):
+        """
+Returns the stream response instance used while execution.
+
+:return: (object) Stream response instance
+:since:  v1.0.0
+        """
+
+        if (self._stream_response is None): raise OperationNotSupportedException("'{0!r}' has no stream response instance".format(self))
+        return self._stream_response
+    #
+
     def get_parameter(self, name, default = None):
         """
 Returns the value for the specified parameter.
@@ -185,12 +208,12 @@ Returns the value for the specified parameter.
         """
 Initializes default values from the a connection or request instance.
 
-:param connection_or_request: (object) Connection or request instance
+:param connection_or_request: Connection or request instance
 
 :since: v1.0.0
         """
 
-        if (not isinstance(connection_or_request, AbstractMixin)): raise TypeException("Request instance given is invalid")
+        if (not isinstance(connection_or_request, AbstractRequestMixin)): raise TypeException("Request instance given is invalid")
 
         self._client_host = connection_or_request.client_host
         self._client_port = connection_or_request.client_port
@@ -210,5 +233,17 @@ Sets the value for the specified parameter.
         """
 
         self._parameters[name] = value
+    #
+
+    def _supports_stream_response(self):
+        """
+Returns false if no separate stream response instance is connected to the
+request.
+
+:return: (bool) True if listener are known.
+:since:  v1.0.0
+        """
+
+        return (self._stream_response is not None)
     #
 #

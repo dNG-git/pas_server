@@ -21,11 +21,12 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 
 from weakref import proxy, ProxyTypes
 
-from dNG.controller.abstract_request import AbstractRequest
-from dNG.controller.abstract_response import AbstractResponse
-from dNG.data.supports_mixin import SupportsMixin
-from dNG.runtime.named_loader import NamedLoader
-from dNG.runtime.not_implemented_exception import NotImplementedException
+from dpt_module_loader import NamedClassLoader
+from dpt_runtime.supports_mixin import SupportsMixin
+from dpt_runtime.not_implemented_exception import NotImplementedException
+
+from ..controller.abstract_request import AbstractRequest
+from ..controller.abstract_response import AbstractResponse
 
 class Abstract(SupportsMixin):
     """
@@ -53,7 +54,7 @@ Constructor __init__(Abstract)
         """
 Method name to be called on execution if set
         """
-        self._log_handler = NamedLoader.get_singleton("dNG.data.logging.LogHandler", False)
+        self._log_handler = None
         """
 The LogHandler is called whenever debug messages should be logged or errors
 happened.
@@ -70,6 +71,8 @@ Request instance
         """
 Response instance
         """
+
+        self.log_handler = NamedClassLoader.get_singleton("dpt_logging.LogHandler", False)
     #
 
     @property

@@ -7,7 +7,7 @@ The Python Application Services of the direct Netware Group contain
 different modules. Each represents one aspect, feature or provides the base
 functionality for other modules.
 
-"pas_server" provides the infrastructure to listen on sockets, accept and
+"pas-server" provides the infrastructure to listen on sockets, accept and
 handle connections or queue them as well as to define an asynchronous
 handler for active ones.
 

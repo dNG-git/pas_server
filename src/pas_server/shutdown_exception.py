@@ -19,7 +19,7 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 
 # pylint: disable=import-error, no-name-in-module
 
-from dNG.data.traced_exception import TracedException
+from dpt_runtime.traced_exception import TracedException
 
 class ShutdownException(TracedException):
     """

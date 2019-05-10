@@ -22,11 +22,11 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 from threading import local
 from weakref import ref
 
-from dNG.data.settings import Settings
-from dNG.data.supports_mixin import SupportsMixin
-from dNG.runtime.io_exception import IOException
-from dNG.runtime.not_implemented_exception import NotImplementedException
-from dNG.runtime.stacked_dict import StackedDict
+from dpt_runtime.io_exception import IOException
+from dpt_runtime.not_implemented_exception import NotImplementedException
+from dpt_runtime.stacked_dict import StackedDict
+from dpt_runtime.supports_mixin import SupportsMixin
+from dpt_settings import Settings
 
 class AbstractResponse(SupportsMixin):
     """
@@ -66,9 +66,6 @@ Response specific data store
         """
 
         AbstractResponse._local.weakref_instance = ref(self)
-
-        self._store['dNG.data.Settings'] = StackedDict()
-        self._store['dNG.data.Settings'].add_dict(Settings.get_dict())
     #
 
     @property
@@ -105,7 +102,7 @@ Return the runtime settings dict for the response.
 :since:  v1.0.0
         """
 
-        return self.store['dNG.data.Settings']
+        return self.store['_dpt_settings']
     #
 
     @property
@@ -116,6 +113,11 @@ Return the data store for the response.
 :return: (dict) Response store
 :since:  v1.0.0
         """
+
+        if ("_dpt_settings" not in self._store):
+            self._store['_dpt_settings'] = StackedDict()
+            self._store['_dpt_settings'].add_dict(Settings.get_dict())
+        #
 
         return self._store
     #

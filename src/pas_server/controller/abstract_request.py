@@ -22,12 +22,11 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 from threading import local
 from weakref import ref
 
-from dNG.data.supports_mixin import SupportsMixin
-from dNG.runtime.not_implemented_exception import NotImplementedException
+from dpt_runtime.not_implemented_exception import NotImplementedException
 
-from .abstract_mixin import AbstractMixin
+from .abstract_request_mixin import AbstractRequestMixin
 
-class AbstractRequest(SupportsMixin, AbstractMixin):
+class AbstractRequest(AbstractRequestMixin):
     """
 This abstract class contains common methods for request implementations.
 
@@ -35,7 +34,7 @@ This abstract class contains common methods for request implementations.
 :copyright:  (C) direct Netware Group - All rights reserved
 :package:    pas
 :subpackage: server
-:since:      v0.2.00
+:since:      v1.0.0
 :license:    https://www.direct-netware.de/redirect?licenses;mpl2
              Mozilla Public License, v. 2.0
     """
@@ -49,11 +48,10 @@ Thread-local static object
         """
 Constructor __init__(AbstractRequest)
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
-        AbstractMixin.__init__(self)
-        SupportsMixin.__init__(self)
+        AbstractRequestMixin.__init__(self)
 
         AbstractRequest._local.weakref_instance = ref(self)
 
@@ -64,28 +62,36 @@ Constructor __init__(AbstractRequest)
         """
 Executes the incoming request.
 
-:since: v0.2.00
+:since: v1.0.0
         """
 
         raise NotImplementedException()
     #
 
-    def _init_request(self):
+    def init(self, connection_or_request):
         """
-Do preparations for request handling.
+Initializes default values from the a connection or request instance.
 
-:since: v0.2.00
+:param connection_or_request: Connection or request instance
+
+:since: v1.0.0
         """
 
-        raise NotImplementedException()
+        AbstractRequestMixin.init(self, connection_or_request)
+
+        if (connection_or_request.is_supported("stream_response"):
+            self._stream_response = connection_or_request.stream_response
+        elif (connection_or_request.is_supported("stream_response_creation"):
+            self._stream_response = connection_or_request.new_stream_response()
+        #
     #
 
-    def _init_response(self):
+    def _new_response(self):
         """
 Initializes the matching response instance.
 
 :return: (object) Response object
-:since:  v0.2.00
+:since:  v1.0.0
         """
 
         raise NotImplementedException()
@@ -93,9 +99,11 @@ Initializes the matching response instance.
 
     def _respond(self, response):
         """
-Reply the request with the given response.
+Responds the request with the given instance.
 
-:since: v0.2.00
+:param response: Response object
+
+:since: v1.0.0
         """
 
         response.send_and_finish()
@@ -106,7 +114,7 @@ Reply the request with the given response.
 Returns false if the server address is unknown.
 
 :return: (bool) True if listener are known.
-:since:  v0.2.00
+:since:  v1.0.0
         """
 
         return (self.server_host is not None)
@@ -118,7 +126,7 @@ Returns false if the server address is unknown.
 Get the AbstractRequest singleton.
 
 :return: (object) Object on success
-:since:  v0.2.00
+:since:  v1.0.0
         """
 
         return (AbstractRequest._local.weakref_instance() if (hasattr(AbstractRequest._local, "weakref_instance")) else None)

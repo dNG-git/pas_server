@@ -20,7 +20,7 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 # pylint: disable=import-error, no-name-in-module
 
 from os import path
-from threading import local, BoundedSemaphore
+from threading import BoundedSemaphore, local
 from weakref import proxy, ProxyTypes
 import asyncore
 import os
@@ -29,14 +29,14 @@ import socket
 import time
 import traceback
 
-from dNG.data.binary import Binary
-from dNG.data.settings import Settings
-from dNG.data.traced_exception import TracedException
-from dNG.plugins.hook import Hook
-from dNG.runtime.instance_lock import InstanceLock
-from dNG.runtime.io_exception import IOException
-from dNG.runtime.named_loader import NamedLoader
-from dNG.runtime.thread import Thread
+from dpt_module_loader import NamedClassLoader
+from dpt_plugins import Hook
+from dpt_runtime.binary import Binary
+from dpt_runtime.io_exception import IOException
+from dpt_runtime.traced_exception import TracedException
+from dpt_settings import Settings
+from dpt_threading.instance_lock import InstanceLock
+from dpt_threading.thread import Thread
 
 from .handler import Handler
 from .shutdown_exception import ShutdownException
@@ -137,7 +137,7 @@ Thread safety lock
         """
 
         self.actives = BoundedSemaphore(threads_active if (self.listener_handle_connections) else 1)
-        self.log_handler = NamedLoader.get_singleton("dNG.data.logging.LogHandler", False)
+        self.log_handler = NamedClassLoader.get_singleton("dpt_logging.LogHandler", False)
     #
 
     @property
@@ -398,7 +398,7 @@ Initializes the dispatcher and stopping hook.
         if (self._log_handler is not None): self._log_handler.debug("#echo(__FILEPATH__)# -{0!r}._init()- (#echo(__LINE__)#)", self, context = "pas_server")
 
         if (self.stopping_hook is not None):
-            stopping_hook = ("dNG.pas.Status.onShutdown" if (self.stopping_hook == "") else self.stopping_hook)
+            stopping_hook = ("pas.Application.onShutdown" if (self.stopping_hook == "") else self.stopping_hook)
             Hook.register_weakref(stopping_hook, self.thread_stop)
         #
     #
@@ -612,7 +612,7 @@ Prepare socket returns a bound socket for the given listener data.
             unixsocket_path_name = path.normpath(Binary.str(listener_data[0]))
 
             if (os.access(unixsocket_path_name, os.F_OK)):
-                if (os.environ.get("DNG_SERVER_REMOVE_UNIX_SOCKETS_ON_START") in ( "1", "t", "true", "yes" )):
+                if (os.environ.get("PAS_SERVER_REMOVE_UNIX_SOCKETS_ON_START") in ( "1", "t", "true", "yes" )):
                     Dispatcher._remove_unixsocket(unixsocket_path_name)
                 else: raise IOException("UNIX socket file '{0}' already exists".format(unixsocket_path_name))
             #

@@ -19,17 +19,17 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 
 # pylint: disable=import-error, no-name-in-module
 
-from select import select
 from socket import SHUT_RDWR
 from time import time
 from weakref import proxy, ProxyTypes
 
-from dNG.data.binary import Binary
-from dNG.data.settings import Settings
-from dNG.plugins.hook import Hook
-from dNG.runtime.io_exception import IOException
-from dNG.runtime.named_loader import NamedLoader
-from dNG.runtime.thread import Thread
+from dpt_module_loader import NamedClassLoader
+from dpt_plugins import Hook
+from dpt_runtime.binary import Binary
+from dpt_runtime.descriptor_selector import DescriptorSelector
+from dpt_runtime.io_exception import IOException
+from dpt_settings import Settings
+from dpt_threading.thread import Thread
 
 from .shutdown_exception import ShutdownException
 
@@ -86,13 +86,13 @@ Server instance
         """
 Socket instance
         """
-        self.timeout = int(Settings.get("pas_global_server_socket_data_timeout", 0))
+        self.timeout = int(Settings.get("global_server_socket_data_timeout", -1))
         """
 Request timeout value
         """
 
-        self.log_handler = NamedLoader.get_singleton("dNG.data.logging.LogHandler", False)
-        if (self.timeout < 1): self.timeout = int(Settings.get("pas_global_socket_data_timeout", 30))
+        self.log_handler = NamedClassLoader.get_singleton("dpt_logging.LogHandler", False)
+        if (self.timeout < 1): self.timeout = int(Settings.get("global_socket_data_timeout", 30))
     #
 
     def __enter__(self):
@@ -102,7 +102,7 @@ python.org: Enter the runtime context related to this object.
 :since: v1.0.0
         """
 
-        Hook.register("dNG.pas.Status.onShutdown", self.stop)
+        Hook.register("pas.Application.onShutdown", self.stop)
     #
 
     def __exit__(self, exc_type, exc_value, traceback):
@@ -113,7 +113,7 @@ python.org: Exit the runtime context related to this object.
 :since:  v1.0.0
         """
 
-        Hook.unregister("dNG.pas.Status.onShutdown", self.stop)
+        Hook.unregister("pas.Application.onShutdown", self.stop)
         return False
     #
 
@@ -190,20 +190,25 @@ Returns data read from the socket.
         _return = Binary.BYTES_TYPE()
 
         data = None
-        data_size = 0
-        timeout_time = (time() + self.timeout)
+        data_size = len(self.data)
+        selector = DescriptorSelector([ self.socket.fileno() ])
+        _time = time()
+        timeout_time = (_time + self.timeout)
 
         while (self.socket is not None
+               and self.socket.fileno() > -1
                and (data is None or (force_size and data_size < size))
-               and time() < timeout_time
+               and _time < timeout_time
               ):
             try:
-                select([ self.socket.fileno() ], [ ], [ ], self.timeout)
+                selector.select(timeout_time - _time, False)
 
                 if (self.address is None):
                     ( data, self.address ) = self.socket.recvfrom(size)
                     self.address_family = self.socket.family
                 else: data = self.socket.recv(size)
+
+                _time = time()
             except Exception: break
 
             if (len(data) > 0):
@@ -212,7 +217,7 @@ Returns data read from the socket.
             else: data = None
         #
 
-        if (self.data is not None and len(self.data) > 0):
+        if (len(self.data) > 0):
             _return = self.data
             self.data = Binary.BYTES_TYPE()
         #
@@ -282,8 +287,10 @@ Stop the thread by actually closing the underlying socket.
 
         # pylint: disable=broad-except
 
-        try: self.socket.shutdown(SHUT_RDWR)
-        except Exception: pass
+        if (SHUT_RDWR is not None):
+            try: self.socket.shutdown(SHUT_RDWR)
+            except Exception: pass
+        #
 
         try: self.socket.close()
         except Exception: pass

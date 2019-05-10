@@ -19,12 +19,11 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 
 # pylint: disable=import-error, no-name-in-module
 
-from dNG.data.supports_mixin import SupportsMixin
-from dNG.runtime.not_implemented_exception import NotImplementedException
+from dpt_runtime.not_implemented_exception import NotImplementedException
 
-from .abstract_mixin import AbstractMixin
+from .abstract_request_mixin import AbstractRequestMixin
 
-class AbstractInnerRequest(SupportsMixin, AbstractMixin):
+class AbstractInnerRequest(AbstractRequestMixin):
     """
 This abstract class contains common methods for inner requests usually used
 for redirection.
@@ -45,8 +44,7 @@ Constructor __init__(AbstractInnerRequest)
 :since: v1.0.0
         """
 
-        AbstractMixin.__init__(self)
-        SupportsMixin.__init__(self)
+        AbstractRequestMixin.__init__(self)
 
         self._parameters_chained = { }
         """
@@ -57,7 +55,7 @@ Chained request parameters
         self.supported_features['parameters_chained'] = True
     #
 
-    @AbstractMixin.client_host.setter
+    @AbstractRequestMixin.client_host.setter
     def client_host(self, host):
         """
 Sets the client host for the inner request.
@@ -70,7 +68,7 @@ Sets the client host for the inner request.
         self._client_host = host
     #
 
-    @AbstractMixin.client_port.setter
+    @AbstractRequestMixin.client_port.setter
     def client_port(self, port):
         """
 Sets the client port.
@@ -83,7 +81,7 @@ Sets the client port.
         self._client_port = port
     #
 
-    @AbstractMixin.parameters.setter
+    @AbstractRequestMixin.parameters.setter
     def parameters(self, parameters):
         """
 Sets all parameters given and if not already defined.
@@ -112,7 +110,7 @@ Return all parameters of a chained request.
         return self._parameters_chained
     #
 
-    @AbstractMixin.server_host.setter
+    @AbstractRequestMixin.server_host.setter
     def server_host(self, host):
         """
 Sets the server host for the inner request.
@@ -125,7 +123,7 @@ Sets the server host for the inner request.
         self._server_host = host
     #
 
-    @AbstractMixin.server_port.setter
+    @AbstractRequestMixin.server_port.setter
     def server_port(self, port):
         """
 Sets the server port.
@@ -138,7 +136,7 @@ Sets the server port.
         self._server_port = port
     #
 
-    @AbstractMixin.server_scheme.setter
+    @AbstractRequestMixin.server_scheme.setter
     def server_scheme(self, scheme):
         """
 Sets the underlying server scheme.
@@ -174,7 +172,7 @@ Initializes default values from the a connection or request instance.
 :since: v1.0.0
         """
 
-        AbstractMixin.init(self, connection_or_request)
+        AbstractRequestMixin.init(self, connection_or_request)
 
         parameters = connection_or_request.parameters
         if (len(parameters) > 0): self.parameters = parameters
