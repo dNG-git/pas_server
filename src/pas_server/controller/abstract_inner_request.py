@@ -178,16 +178,6 @@ Initializes default values from the a connection or request instance.
         if (len(parameters) > 0): self.parameters = parameters
     #
 
-    def _init_request(self):
-        """
-Do preparations for request handling.
-
-:since: v1.0.0
-        """
-
-        raise NotImplementedException()
-    #
-
     def set_parameter_chained(self, name, value):
         """
 Sets the value for the given parameter in a chained request.

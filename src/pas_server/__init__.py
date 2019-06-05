@@ -18,4 +18,3 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 """
 
 from .dispatcher import Dispatcher
-from .handler import Handler

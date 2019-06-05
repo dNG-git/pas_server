@@ -18,8 +18,10 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 """
 
 from .abstract_connection import AbstractConnection
+from .abstract_dispatched_connection import AbstractDispatchedConnection
 from .abstract_inner_request import AbstractInnerRequest
 from .abstract_request import AbstractRequest
 from .abstract_response import AbstractResponse
 from .abstract_stream_response import AbstractStreamResponse
+from .abstract_thread_dispatched_connection import AbstractThreadDispatchedConnection
 from .stdout_stream_response import StdoutStreamResponse

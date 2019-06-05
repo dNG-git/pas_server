@@ -19,12 +19,12 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 
 # pylint: disable=import-error, no-name-in-module
 
+from dpt_logging import LogLine
 from dpt_module_loader import NamedClassLoader
-from dpt_runtime.supports_mixin import SupportsMixin
 
 from .abstract_request_mixin import AbstractRequestMixin
 
-class AbstractConnection(SupportsMixin, AbstractRequestMixin):
+class AbstractConnection(AbstractRequestMixin):
     """
 This abstract class contains common methods to implement a connection.
 
@@ -45,9 +45,13 @@ Constructor __init__(AbstractConnection)
         """
 
         AbstractRequestMixin.__init__(self)
-        SupportsMixin.__init__(self)
 
-        self._log_handler = NamedClassLoader.get_singleton("dpt_logging.LogHandler", False)
+        self._stream_response = None
+        """
+Stream response instance
+        """
+
+        self.log_handler = NamedClassLoader.get_singleton("dpt_logging.LogHandler", False)
 
         self.supported_features['stream_response_creation'] = False
     #
@@ -74,15 +78,29 @@ Finish transmission and cleanup resources.
 
     def handle(self):
         """
-Cleans up and closes this connection.
+Handles this connection.
 
 :since: v1.0.0
         """
 
-        request = self._new_request()
+        # pylint: disable=broad-except
 
-        request.init(self)
-        request.execute()
+        try:
+            request = self._new_request()
+
+            request.init(self)
+            request.execute()
+        except Exception as handled_exception: self.handle_execution_exception(handled_exception)
+    #
+
+    def handle_execution_exception(self, exception):
+        """
+Handles the uncatched exception thrown while connection handling.
+
+:since: v1.0.0
+        """
+
+        LogLine.error(exception, context = "pas_server")
     #
 
     def _new_request(self):

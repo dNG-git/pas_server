@@ -68,24 +68,6 @@ Executes the incoming request.
         raise NotImplementedException()
     #
 
-    def init(self, connection_or_request):
-        """
-Initializes default values from the a connection or request instance.
-
-:param connection_or_request: Connection or request instance
-
-:since: v1.0.0
-        """
-
-        AbstractRequestMixin.init(self, connection_or_request)
-
-        if (connection_or_request.is_supported("stream_response"):
-            self._stream_response = connection_or_request.stream_response
-        elif (connection_or_request.is_supported("stream_response_creation"):
-            self._stream_response = connection_or_request.new_stream_response()
-        #
-    #
-
     def _new_response(self):
         """
 Initializes the matching response instance.

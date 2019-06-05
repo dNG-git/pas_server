@@ -38,7 +38,7 @@ from dpt_settings import Settings
 from dpt_threading.instance_lock import InstanceLock
 from dpt_threading.thread import Thread
 
-from .handler import Handler
+from .controller import AbstractDispatchedConnection
 from .shutdown_exception import ShutdownException
 
 class Dispatcher(asyncore.dispatcher):
@@ -58,14 +58,14 @@ of requests transparently.
 
     # pylint: disable=unused-argument
 
-    def __init__(self, listener_socket, active_handler, threads_active = 5, queue_handler = None, threads_queued = 10, thread_stopping_hook = None):
+    def __init__(self, listener_socket, active_connection, threads_active = 5, queue_connection = None, threads_queued = 10, thread_stopping_hook = None):
         """
 Constructor __init__(Dispatcher)
 
 :param listener_socket: Listener socket
-:param active_handler: Thread to be used for activated connections
+:param active_connection: Thread to be used for activated connections
 :param threads_active: Allowed simultaneous threads
-:param queue_handler: Thread to be used for queued connections
+:param queue_connection: Thread to be used for queued connections
 :param threads_queued: Allowed queued threads
 :param thread_stopping_hook: Thread stopping hook definition
 
@@ -78,9 +78,9 @@ Constructor __init__(Dispatcher)
         """
 Listener state
         """
-        self.active_handler = (active_handler if (issubclass(active_handler, Handler)) else None)
+        self.active_connection = (active_connection if (issubclass(active_connection, AbstractDispatchedConnection)) else None)
         """
-Active queue handler
+Active queue connection class
         """
         self.actives = None
         """
@@ -112,12 +112,12 @@ Thread safety lock
         """
         self._log_handler = None
         """
-The LogHandler is called whenever debug messages should be logged or errors
+The log handler is called whenever debug messages should be logged or errors
 happened.
         """
-        self.queue_handler = (queue_handler if (isinstance(queue_handler, Handler)) else None)
+        self.queue_connection = (queue_connection if (isinstance(queue_connection, AbstractDispatchedConnection)) else None)
         """
-Passive queue handler
+Passive queue connection class
         """
         self.queue_max = threads_queued
         """
@@ -155,9 +155,9 @@ Returns the listener status.
     @property
     def log_handler(self):
         """
-Returns the LogHandler.
+Returns the log handler.
 
-:return: (object) LogHandler in use
+:return: (object) Log handler in use
 :since:  v1.0.0
         """
 
@@ -167,9 +167,9 @@ Returns the LogHandler.
     @log_handler.setter
     def log_handler(self, log_handler):
         """
-Sets the LogHandler.
+Sets the log handler.
 
-:param log_handler: LogHandler to use
+:param log_handler: Log handler to use
 
 :since: v1.0.0
         """
@@ -186,11 +186,13 @@ Run the active handler for the given socket.
 :since: v1.0.0
         """
 
-        handler = self.active_handler()
-        handler.set_instance_data(self, _socket)
-        handler.start()
+        connection = self.active_connection()
+        connection.init_from_dispatcher(self, _socket)
 
-        if (self._log_handler is not None): self._log_handler.debug("{0!r} started a new thread '{1!r}'", self, handler, context = "pas_server")
+        if (isinstance(connection, Thread)): connection.start()
+        else: connection.handle()
+
+        if (self._log_handler is not None): self._log_handler.debug("{0!r} started '{1!r}'", self, connection, context = "pas_server")
     #
 
     def _active_queue(self, _socket):
@@ -207,7 +209,7 @@ the passive queue.
         _return = False
 
         if (self.active):
-            if (self.actives.acquire(self.queue_handler is None)):
+            if (self.actives.acquire(self.queue_connection is None)):
                 with self._lock:
                     if (self.active):
                         self.actives_list.append(_socket)
@@ -215,9 +217,11 @@ the passive queue.
                     else: self.actives.release()
                 #
             else:
-                handler = self.queue_handler()
-                handler.set_instance_data(self, _socket)
-                handler.start()
+                connection = self.queue_connection()
+                connection.init_from_dispatcher(self, _socket)
+
+                if (isinstance(connection, Thread)): connection.start()
+                else: connection.handle()
 
                 self.waiting += 1
             #

@@ -21,7 +21,7 @@ from dpt_runtime.operation_not_supported_exception import OperationNotSupportedE
 from dpt_runtime.supports_mixin import SupportsMixin
 from dpt_runtime.type_exception import TypeException
 
-class AbstractRequestMixin(object):
+class AbstractRequestMixin(SupportsMixin):
     """
 Mixin for abstract classes to implement methods only once.
 
@@ -180,7 +180,7 @@ Returns the server scheme.
     @property
     def stream_response(self):
         """
-Returns the stream response instance used while execution.
+Returns the stream response instance in use.
 
 :return: (object) Stream response instance
 :since:  v1.0.0
@@ -220,6 +220,12 @@ Initializes default values from the a connection or request instance.
         self._server_scheme = connection_or_request.server_scheme
         self._server_host = connection_or_request.server_host
         self._server_port = connection_or_request.server_port
+
+        if (connection_or_request.is_supported("stream_response")):
+            self._stream_response = connection_or_request.stream_response
+        elif (connection_or_request.is_supported("stream_response_creation")):
+            self._stream_response = connection_or_request.new_stream_response()
+        #
     #
 
     def set_parameter(self, name, value):
@@ -238,12 +244,13 @@ Sets the value for the specified parameter.
     def _supports_stream_response(self):
         """
 Returns false if no separate stream response instance is connected to the
-request.
+connection.
 
-:return: (bool) True if listener are known.
+:return: (bool) True if a stream response instance is available
 :since:  v1.0.0
         """
 
-        return (self._stream_response is not None)
+        try: return (self.stream_response is not None)
+        except OperationNotSupportedException: return False
     #
 #
