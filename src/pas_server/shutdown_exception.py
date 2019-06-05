@@ -19,9 +19,9 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 
 # pylint: disable=import-error, no-name-in-module
 
-from dpt_runtime.traced_exception import TracedException
+from dpt_runtime.traced_exception import _TracedException
 
-class ShutdownException(TracedException):
+class ShutdownException(_TracedException):
     """
 The "ShutdownException" class is used to stop running server threads.
 
