@@ -60,7 +60,7 @@ Constructor __init__(AbstractStreamResponse)
 
         SupportsMixin.__init__(self)
 
-        self.active = True
+        self._active = True
         """
 True if ready for output.
         """
@@ -103,7 +103,7 @@ Returns if the response stream is active.
 :since:  v1.0.0
         """
 
-        return self.active
+        return self._active
     #
 
     @property
@@ -140,7 +140,7 @@ Returns the streamer to create response data when requested.
 :since:  v1.0.0
         """
 
-        return (self._streamer if (self.active) else None)
+        return (self._streamer if (self._active) else None)
     #
 
     @streamer.setter
@@ -167,12 +167,12 @@ Finish transmission and cleanup resources.
 :since: v1.0.0
         """
 
-        if (self.active):
+        if (self._active):
             try:
                 self.send()
                 if (self.streamer is not None and hasattr(self.streamer, "close")): self.streamer.close()
             finally:
-                self.active = False
+                self._active = False
                 self._data = None
                 self._streamer = None
             #
@@ -186,7 +186,7 @@ Send data in cache.
 :since: v1.0.0
         """
 
-        if (self.active):
+        if (self._active):
             if (self.streamer is not None and (not self.stream_mode & AbstractStreamResponse.STREAM_ITERATOR)):
                 while (not self.streamer.is_eof):
                     data = self.streamer.read()
@@ -210,7 +210,7 @@ Sends the given data as part of the response.
 :since: v1.0.0
         """
 
-        if (self.active):
+        if (self._active):
             data = Binary.bytes(data)
 
             if (self.stream_mode == AbstractStreamResponse.STREAM_NONE):

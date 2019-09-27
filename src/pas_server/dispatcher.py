@@ -74,7 +74,7 @@ Constructor __init__(Dispatcher)
 
         asyncore.dispatcher.__init__(self, sock = listener_socket)
 
-        self.active = False
+        self._active = False
         """
 Listener state
         """
@@ -149,7 +149,7 @@ Returns the listener status.
 :since:  v1.0.0
         """
 
-        return self.active
+        return self._active
     #
 
     @property
@@ -208,10 +208,10 @@ the passive queue.
 
         _return = False
 
-        if (self.active):
+        if (self.is_active):
             if (self.actives.acquire(self.queue_connection is None)):
                 with self._lock:
-                    if (self.active):
+                    if (self.is_active):
                         self.actives_list.append(_socket)
                         _return = True
                     else: self.actives.release()
@@ -283,7 +283,7 @@ Deprecated since version 3.2.
 
         # pylint: disable=broad-except
 
-        if (self.active and self.listener_handle_connections):
+        if (self.is_active and self.listener_handle_connections):
             socket_data = None
 
             try: socket_data = self.accept()
@@ -307,7 +307,7 @@ call for the local endpoint.
 
         # pylint: disable=broad-except
 
-        if (self.active and self.listener_handle_connections):
+        if (self.is_active and self.listener_handle_connections):
             try:
                 if (self._active_queue(sock)): self._active_activate(sock)
             except ShutdownException as handled_exception:
@@ -329,7 +329,7 @@ python.org: Called when the socket is closed.
 :since: v1.0.0
         """
 
-        if (self.active): self.stop()
+        if (self.is_active): self.stop()
     #
 
     def handle_connect(self):
@@ -341,7 +341,7 @@ negotiation with the remote endpoint, for example.
 :since: v1.0.0
         """
 
-        if (self.active): self._start_listening()
+        if (self.is_active): self._start_listening()
     #
 
     def handle_error(self):
@@ -365,7 +365,7 @@ on the channel's socket will succeed.
 
         # pylint: disable=broad-except
 
-        if ((not self.listener_handle_connections) and self.active):
+        if ((not self.listener_handle_connections) and self.is_active):
             try:
                 if (self._active_queue(self.listener_socket)): self._active_activate(self.listener_socket)
             except ShutdownException as handled_exception:
@@ -389,7 +389,7 @@ rarely used.
 :since: v1.0.0
         """
 
-        if (self.active): self._active_unqueue_all()
+        if (self.is_active): self._active_unqueue_all()
     #
 
     def _init(self):
@@ -414,13 +414,13 @@ Starts the prepared dispatcher in a new thread.
 :since: v1.0.0
         """
 
-        if (not self.active):
+        if (not self.is_active):
             is_already_active = False
 
             with self._lock:
                 # Thread safety
-                is_already_active = self.active
-                if (not is_already_active): self.active = True
+                is_already_active = self.is_active
+                if (not is_already_active): self._active = True
             #
 
             if (not is_already_active):
@@ -472,11 +472,11 @@ Run the main loop for this server instance.
         self._ensure_thread_local()
 
         try:
-            if (not self.active):
+            if (not self.is_active):
                 with self._lock:
                     # Thread safety
-                    if (not self.active):
-                        self.active = True
+                    if (not self.is_active):
+                        self._active = True
                         self._init()
                     #
                 #
@@ -487,12 +487,12 @@ Run the main loop for this server instance.
             self.add_channel(self.local.sockets)
             asyncore.loop(5, map = self.local.sockets)
         except ShutdownException as handled_exception:
-            if (self.active):
+            if (self.is_active):
                 exception = handled_exception.cause
                 if (exception is not None and self._log_handler is not None): self._log_handler.error(exception, context = "pas_server")
             #
         except Exception as handled_exception:
-            if (self.active):
+            if (self.is_active):
                 if (self._log_handler is None): TracedException.print_current_stack_trace()
                 else: self._log_handler.error(handled_exception, context = "pas_server")
             #
@@ -510,10 +510,10 @@ Stops the listener and unqueues all running sockets.
 
         self._lock.acquire()
 
-        if (self.active):
+        if (self.is_active):
             if (self._log_handler is not None): self._log_handler.debug("#echo(__FILEPATH__)# -{0!r}.stop()- (#echo(__LINE__)#)", self, context = "pas_server")
 
-            self.active = False
+            self._active = False
 
             if (self.stopping_hook is not None and len(self.stopping_hook) > 0): Hook.unregister(self.stopping_hook, self.thread_stop)
             self.stopping_hook = ""
