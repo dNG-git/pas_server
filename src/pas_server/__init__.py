@@ -18,3 +18,4 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 """
 
 from .dispatcher import Dispatcher
+from .msa_request_exception import MsaRequestException

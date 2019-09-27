@@ -17,12 +17,23 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 #echo(__FILEPATH__)#
 """
 
-from .abstract_connection import AbstractConnection
-from .abstract_dispatched_connection import AbstractDispatchedConnection
-from .abstract_inner_request import AbstractInnerRequest
-from .abstract_request import AbstractRequest
-from .abstract_response import AbstractResponse
-from .abstract_stream_response import AbstractStreamResponse
-from .abstract_thread_dispatched_connection import AbstractThreadDispatchedConnection
-from .msa_request_mixin import MsaRequestMixin
-from .stdout_stream_response import StdoutStreamResponse
+# pylint: disable=import-error, no-name-in-module
+
+from dpt_runtime.io_exception import IOException
+
+class MsaRequestException(IOException):
+    """
+The "MsaRequestException" class is used to indicate errors related to the
+execution of an request for an action of a specific service and module.
+
+:author:     direct Netware Group et al.
+:copyright:  (C) direct Netware Group - All rights reserved
+:package:    pas
+:subpackage: server
+:since:      v1.0.0
+:license:    https://www.direct-netware.de/redirect?licenses;mpl2
+             Mozilla Public License, v. 2.0
+    """
+
+    pass
+#
