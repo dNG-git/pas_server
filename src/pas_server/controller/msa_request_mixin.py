@@ -17,6 +17,8 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 #echo(__FILEPATH__)#
 """
 
+import re
+
 from dpt_logging import LogLine
 from dpt_module_loader import NamedClassLoader
 
@@ -36,7 +38,12 @@ Mixin to handle requests for actions of specific services and modules.
              Mozilla Public License, v. 2.0
     """
 
-    _mixin_slots_ = [ ]
+    RE_NON_WORD_CHARS = re.compile("\\W+")
+    """
+RegExp to find non-word characters
+    """
+
+    _mixin_slots_ = [ "_action", "_module_package", "_service_package_and_module" ]
     """
 Additional __slots__ used for inherited classes.
     """
@@ -45,6 +52,109 @@ Additional __slots__ used for inherited classes.
 python.org: __slots__ reserves space for the declared variables and prevents
 the automatic creation of __dict__ and __weakref__ for each instance.
     """
+
+    def __init__(self):
+        """
+Constructor __init__(AbstractInnerHttpRequest)
+
+:since: v1.0.0
+        """
+
+        self._action = None
+        """
+Requested action
+        """
+        self._module_package = None
+        """
+Request package name the module file belongs to
+        """
+        self._service_package_and_module = None
+        """
+Request package name the module file belongs to
+        """
+    #
+
+    @property
+    def action(self):
+        """
+Returns the requested action.
+
+:return: (str) Action requested
+:since:  v1.0.0
+        """
+
+        return ("index" if (self._action is None) else self._action)
+    #
+
+    @action.setter
+    def action(self, action):
+        """
+Sets the requested action.
+
+:param action: Action requested
+
+:since: v1.0.0
+        """
+
+        action = action.strip()
+        if (action not in ( "", "-" )): self._action = MsaRequestMixin.RE_NON_WORD_CHARS.sub("_", action)
+    #
+
+    @property
+    def module_package(self):
+        """
+Returns the requested module package name.
+
+:return: (str) Module package name requested
+:since:  v1.0.0
+        """
+
+        return ("services" if (self._module_package is None) else self._module_package)
+    #
+
+    @module_package.setter
+    def module_package(self, name):
+        """
+Sets the requested module package name.
+
+:param name: Module package name requested
+
+:since: v1.0.0
+        """
+
+        name = name.strip()
+        if (name not in ( "", "-" )): self._module_package = MsaRequestMixin.RE_NON_WORD_CHARS.sub("_", name)
+    #
+
+    @property
+    def service_package_and_module(self):
+        """
+Returns the requested service package and module name.
+
+:return: (str) Service package and module requested
+:since:  v1.0.0
+        """
+
+        return ("index" if (self._service_package_and_module is None) else self._service_package_and_module)
+    #
+
+    @service_package_and_module.setter
+    def service_package_and_module(self, name):
+        """
+Sets the requested service package and module name.
+
+:param name: Service package and module requested
+
+:since: v1.0.0
+        """
+
+        name = name.strip()
+
+        if (name != "-"):
+            name = re.sub("(\\.){2,}", ".", re.sub("[^\\w.]+", "_", name))
+            if (name != ""): self._service_package_and_module = name
+        #
+    #
 
     @staticmethod
     def execute_msa_request(request, response):
