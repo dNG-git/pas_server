@@ -17,8 +17,6 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 #echo(__FILEPATH__)#
 """
 
-# pylint: disable=import-error, no-name-in-module
-
 from dpt_logging import LogLine
 from dpt_module_loader import NamedClassLoader
 
@@ -37,6 +35,12 @@ This abstract class contains common methods to implement a connection.
              Mozilla Public License, v. 2.0
     """
 
+    __slots__ = [ "_stream_response" ]
+    """
+python.org: __slots__ reserves space for the declared variables and prevents
+the automatic creation of __dict__ and __weakref__ for each instance.
+    """
+
     def __init__(self, *args, **kwargs):
         """
 Constructor __init__(AbstractConnection)
@@ -51,7 +55,7 @@ Constructor __init__(AbstractConnection)
 Stream response instance
         """
 
-        self.log_handler = NamedClassLoader.get_singleton("dpt_logging.LogHandler", False)
+        self._log_handler = NamedClassLoader.get_singleton("dpt_logging.LogHandler", False)
 
         self.supported_features['stream_response_creation'] = False
     #

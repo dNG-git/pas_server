@@ -17,8 +17,6 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 #echo(__FILEPATH__)#
 """
 
-# pylint: disable=import-error, no-name-in-module
-
 from threading import local
 from weakref import ref
 
@@ -39,6 +37,11 @@ This abstract class contains common methods for request implementations.
              Mozilla Public License, v. 2.0
     """
 
+    __slots__ = [ "__weakref__" ] + AbstractRequestMixin._mixin_slots_
+    """
+python.org: __slots__ reserves space for the declared variables and prevents
+the automatic creation of __dict__ and __weakref__ for each instance.
+    """
     _local = local()
     """
 Thread-local static object

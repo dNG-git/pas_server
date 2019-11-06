@@ -58,6 +58,27 @@ of requests transparently.
 
     # pylint: disable=unused-argument
 
+    __slots__ = [ "_active",
+                  "active_connection",
+                  "actives",
+                  "actives_list",
+                  "listener_handle_connections",
+                  "listener_socket",
+                  "listener_startup_timeout",
+                  "local",
+                  "_lock",
+                  "_log_handler",
+                  "queue_connection",
+                  "queue_max",
+                  "stopping_hook",
+                  "thread",
+                  "waiting"
+                ]
+    """
+python.org: __slots__ reserves space for the declared variables and prevents
+the automatic creation of __dict__ and __weakref__ for each instance.
+    """
+
     def __init__(self, listener_socket, active_connection, threads_active = 5, queue_connection = None, threads_queued = 10, thread_stopping_hook = None):
         """
 Constructor __init__(Dispatcher)

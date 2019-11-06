@@ -17,16 +17,18 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 #echo(__FILEPATH__)#
 """
 
-# pylint: disable=import-error, no-name-in-module
-
 from threading import local
 from weakref import ref
 
+try: from collections.abc import Mapping
+except ImportError: from collections import Mapping
+
 from dpt_runtime.io_exception import IOException
 from dpt_runtime.not_implemented_exception import NotImplementedException
-from dpt_runtime.stacked_dict import StackedDict
 from dpt_runtime.supports_mixin import SupportsMixin
 from dpt_settings import Settings
+
+from .abstract_request_mixin import AbstractRequestMixin
 
 class AbstractResponse(SupportsMixin):
     """
@@ -41,6 +43,11 @@ This abstract class contains common methods for response implementations.
              Mozilla Public License, v. 2.0
     """
 
+    __slots__ = [ "__weakref__", "_store", "_log_handler" ] + SupportsMixin._mixin_slots_
+    """
+python.org: __slots__ reserves space for the declared variables and prevents
+the automatic creation of __dict__ and __weakref__ for each instance.
+    """
     _local = local()
     """
 Thread-local static object
@@ -78,19 +85,6 @@ Returns the LogHandler.
         """
 
         return self._log_handler
-    #
-
-    @log_handler.setter
-    def log_handler(self, log_handler):
-        """
-Sets the LogHandler.
-
-:param log_handler: LogHandler to use
-
-:since: v1.0.0
-        """
-
-        self._log_handler = log_handler
     #
 
     @property
@@ -159,6 +153,20 @@ send.
         """
 
         raise IOException(message, exception)
+    #
+
+    def init(self, connection_or_request):
+        """
+Initializes default values from the a connection or request instance.
+
+:param connection_or_request: Connection or request instance
+
+:since: v1.0.0
+        """
+
+        if (not isinstance(connection_or_request, AbstractRequestMixin)): raise TypeException("Request instance given is invalid")
+
+        self._log_handler = connection_or_request.log_handler
     #
 
     def send(self):

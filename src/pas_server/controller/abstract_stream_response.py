@@ -27,6 +27,8 @@ from dpt_runtime.not_implemented_exception import NotImplementedException
 from dpt_runtime.supports_mixin import SupportsMixin
 from dpt_runtime.value_exception import ValueException
 
+from .abstract_request_mixin import AbstractRequestMixin
+
 class AbstractStreamResponse(SupportsMixin):
     """
 A stream response reads data from a streamer and writes it to a response object.
@@ -51,6 +53,18 @@ Output content directly as soon as it is available and requested by a iterator.
 Do not stream content
     """
 
+    __slots__ = [ "_active",
+                  "_data",
+                  "_log_handler",
+                  "stream_mode",
+                  "stream_mode_supported",
+                  "_streamer"
+                ] + SupportsMixin._mixin_slots_
+    """
+python.org: __slots__ reserves space for the declared variables and prevents
+the automatic creation of __dict__ and __weakref__ for each instance.
+    """
+
     def __init__(self):
         """
 Constructor __init__(AbstractStreamResponse)
@@ -67,6 +81,11 @@ True if ready for output.
         self._data = None
         """
 Data buffer
+        """
+        self._log_handler = None
+        """
+The LogHandler is called whenever debug messages should be logged or errors
+happened.
         """
         self.stream_mode = AbstractStreamResponse.STREAM_NONE
         """
@@ -132,6 +151,18 @@ Returns true if a streamer has been set.
     #
 
     @property
+    def log_handler(self):
+        """
+Returns the LogHandler.
+
+:return: (object) LogHandler in use
+:since:  v1.0.0
+        """
+
+        return self._log_handler
+    #
+
+    @property
     def streamer(self):
         """
 Returns the streamer to create response data when requested.
@@ -177,6 +208,20 @@ Finish transmission and cleanup resources.
                 self._streamer = None
             #
         #
+    #
+
+    def init(self, connection_or_request):
+        """
+Initializes default values from the a connection or request instance.
+
+:param connection_or_request: Connection or request instance
+
+:since: v1.0.0
+        """
+
+        if (not isinstance(connection_or_request, AbstractRequestMixin)): raise TypeException("Request instance given is invalid")
+
+        self._log_handler = connection_or_request.log_handler
     #
 
     def send(self):

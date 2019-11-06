@@ -36,6 +36,16 @@ Mixin to handle requests for actions of specific services and modules.
              Mozilla Public License, v. 2.0
     """
 
+    _mixin_slots_ = [ ]
+    """
+Additional __slots__ used for inherited classes.
+    """
+    __slots__ = [ ]
+    """
+python.org: __slots__ reserves space for the declared variables and prevents
+the automatic creation of __dict__ and __weakref__ for each instance.
+    """
+
     @staticmethod
     def execute_msa_request(request, response):
         """

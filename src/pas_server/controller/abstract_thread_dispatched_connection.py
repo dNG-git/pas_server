@@ -17,18 +17,10 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 #echo(__FILEPATH__)#
 """
 
-# pylint: disable=import-error, no-name-in-module
-
-from socket import SHUT_RDWR
 from time import time
-from weakref import proxy, ProxyTypes
 
-from dpt_module_loader import NamedClassLoader
 from dpt_plugins import Hook
-from dpt_runtime.binary import Binary
-from dpt_runtime.descriptor_selector import DescriptorSelector
 from dpt_runtime.io_exception import IOException
-from dpt_settings import Settings
 from dpt_threading.thread import Thread
 
 from .abstract_dispatched_connection import AbstractDispatchedConnection
@@ -49,6 +41,12 @@ handler that is executed in a separate thread.
     """
 
     # pylint: disable=unused-argument
+
+    __slots__ = [ ]
+    """
+python.org: __slots__ reserves space for the declared variables and prevents
+the automatic creation of __dict__ and __weakref__ for each instance.
+    """
 
     def __init__(self):
         """

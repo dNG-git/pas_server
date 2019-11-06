@@ -41,6 +41,17 @@ class Abstract(SupportsMixin):
              Mozilla Public License, v. 2.0
     """
 
+    __slots__ = [ "_executable_method_name",
+                  "_is_result_expected",
+                  "_log_handler",
+                  "request",
+                  "response"
+                ] + SupportsMixin._mixin_slots_
+    """
+python.org: __slots__ reserves space for the declared variables and prevents
+the automatic creation of __dict__ and __weakref__ for each instance.
+    """
+
     def __init__(self):
         """
 Constructor __init__(Abstract)
@@ -54,14 +65,14 @@ Constructor __init__(Abstract)
         """
 Method name to be called on execution if set
         """
+        self._is_result_expected = False
+        """
+True if a result of the executable method is expected
+        """
         self._log_handler = None
         """
 The LogHandler is called whenever debug messages should be logged or errors
 happened.
-        """
-        self._is_result_expected = False
-        """
-True if a result of the executable method is expected
         """
         self.request = None
         """

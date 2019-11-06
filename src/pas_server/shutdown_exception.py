@@ -34,5 +34,9 @@ The "ShutdownException" class is used to stop running server threads.
              Mozilla Public License, v. 2.0
     """
 
-    pass
+    __slots__ = [ ]
+    """
+python.org: __slots__ reserves space for the declared variables and prevents
+the automatic creation of __dict__ and __weakref__ for each instance.
+    """
 #

@@ -34,6 +34,24 @@ Mixin for abstract classes to implement methods only once.
              Mozilla Public License, v. 2.0
     """
 
+    _mixin_slots_ = [ "_client_host",
+                      "_client_port",
+                      "_log_handler",
+                      "_parameters",
+                      "_server_host",
+                      "_server_port",
+                      "_server_scheme",
+                      "_stream_response"
+                    ] + SupportsMixin._mixin_slots_
+    """
+Additional __slots__ used for inherited classes.
+    """
+    __slots__ = [ ]
+    """
+python.org: __slots__ reserves space for the declared variables and prevents
+the automatic creation of __dict__ and __weakref__ for each instance.
+    """
+
     def __init__(self):
         """
 Constructor __init__(AbstractRequest)
@@ -114,19 +132,6 @@ Returns the LogHandler.
         """
 
         return self._log_handler
-    #
-
-    @log_handler.setter
-    def log_handler(self, log_handler):
-        """
-Sets the LogHandler.
-
-:param log_handler: LogHandler to use
-
-:since: v1.0.0
-        """
-
-        self._log_handler = log_handler
     #
 
     @property
@@ -220,6 +225,8 @@ Initializes default values from the a connection or request instance.
         self._server_scheme = connection_or_request.server_scheme
         self._server_host = connection_or_request.server_host
         self._server_port = connection_or_request.server_port
+
+        self._log_handler = connection_or_request.log_handler
 
         if (connection_or_request.is_supported("stream_response")):
             self._stream_response = connection_or_request.stream_response

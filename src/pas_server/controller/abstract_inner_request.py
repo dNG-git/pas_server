@@ -17,8 +17,6 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 #echo(__FILEPATH__)#
 """
 
-# pylint: disable=import-error, no-name-in-module
-
 from dpt_runtime.not_implemented_exception import NotImplementedException
 
 from .abstract_request_mixin import AbstractRequestMixin
@@ -35,6 +33,12 @@ for redirection.
 :since:      v1.0.0
 :license:    https://www.direct-netware.de/redirect?licenses;mpl2
              Mozilla Public License, v. 2.0
+    """
+
+    __slots__ = [ "__weakref__", "_parameters_chained" ] + AbstractRequestMixin._mixin_slots_
+    """
+python.org: __slots__ reserves space for the declared variables and prevents
+the automatic creation of __dict__ and __weakref__ for each instance.
     """
 
     def __init__(self):

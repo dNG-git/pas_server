@@ -17,11 +17,8 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 #echo(__FILEPATH__)#
 """
 
-# pylint: disable=import-error, no-name-in-module
-
 from socket import SHUT_RDWR
 from time import time
-from weakref import proxy, ProxyTypes
 
 from dpt_module_loader import NamedClassLoader
 from dpt_plugins import Hook
@@ -47,6 +44,12 @@ handler.
     """
 
     # pylint: disable=unused-argument
+
+    __slots__ = [ "_client_socket_address", "_read_buffer", "_read_timeout", "_server", "_socket", "_socket_family" ]
+    """
+python.org: __slots__ reserves space for the declared variables and prevents
+the automatic creation of __dict__ and __weakref__ for each instance.
+    """
 
     def __init__(self):
         """
