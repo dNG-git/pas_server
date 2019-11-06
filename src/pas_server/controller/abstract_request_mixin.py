@@ -36,6 +36,7 @@ Mixin for abstract classes to implement methods only once.
 
     _mixin_slots_ = [ "_client_host",
                       "_client_port",
+                      "_connection_parameters",
                       "_log_handler",
                       "_parameters",
                       "_server_host",
@@ -69,6 +70,10 @@ Client host
         """
 Client port
         """
+        self._connection_parameters = None
+        """
+Request linked connection parameters
+        """
         self._log_handler = None
         """
 The LogHandler is called whenever debug messages should be logged or errors
@@ -95,6 +100,8 @@ Server scheme / protocol
 Stream response instance
         """
 
+        self.supported_features['connection_data'] = self._supports_connection_data
+        self.supported_features['connection_parameters'] = self._supports_connection_parameters
         self.supported_features['stream_response'] = self._supports_stream_response
     #
 
@@ -120,6 +127,30 @@ Returns the client port if any.
         """
 
         return self._client_port
+    #
+
+    @property
+    def connection_parameters(self):
+        """
+Returns the parameters for the connection.
+
+:return: (dict) Connection parameters
+:since:  v1.0.0
+        """
+
+        return self._connection_parameters
+    #
+
+    @property
+    def connection_settings(self):
+        """
+Return the settings dict for the connection.
+
+:return: (dict) Connection settings dict
+:since:  v1.0.0
+        """
+
+        return (None if (self._connection_parameters is None) else self.connection_parameters.get("_dpt_settings", None))
     #
 
     @property
@@ -220,11 +251,17 @@ Initializes default values from the a connection or request instance.
 
         if (not isinstance(connection_or_request, AbstractRequestMixin)): raise TypeException("Request instance given is invalid")
 
-        self._client_host = connection_or_request.client_host
-        self._client_port = connection_or_request.client_port
-        self._server_scheme = connection_or_request.server_scheme
-        self._server_host = connection_or_request.server_host
-        self._server_port = connection_or_request.server_port
+        if (connection_or_request.is_supported("connection_data")):
+            self._client_host = connection_or_request.client_host
+            self._client_port = connection_or_request.client_port
+            self._server_scheme = connection_or_request.server_scheme
+            self._server_host = connection_or_request.server_host
+            self._server_port = connection_or_request.server_port
+        #
+
+        if (connection_or_request.is_supported("connection_parameters")):
+            self._connection_parameters = connection_or_request.connection_parameters
+        #
 
         self._log_handler = connection_or_request.log_handler
 
@@ -246,6 +283,28 @@ Sets the value for the specified parameter.
         """
 
         self._parameters[name] = value
+    #
+
+    def _supports_connection_data(self):
+        """
+Returns false if no connection data are available.
+
+:return: (bool) True if connection data are available
+:since:  v1.0.0
+        """
+
+        return (self.client_host is not None)
+    #
+
+    def _supports_connection_parameters(self):
+        """
+Returns false if no connection parameters are initialized.
+
+:return: (bool) True if connection parameters are initialized
+:since:  v1.0.0
+        """
+
+        return (self._connection_parameters is not None)
     #
 
     def _supports_stream_response(self):

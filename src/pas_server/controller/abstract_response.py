@@ -43,7 +43,7 @@ This abstract class contains common methods for response implementations.
              Mozilla Public License, v. 2.0
     """
 
-    __slots__ = [ "__weakref__", "_store", "_log_handler" ] + SupportsMixin._mixin_slots_
+    __slots__ = [ "__weakref__", "_connection_parameters", "_log_handler" ] + SupportsMixin._mixin_slots_
     """
 python.org: __slots__ reserves space for the declared variables and prevents
 the automatic creation of __dict__ and __weakref__ for each instance.
@@ -62,17 +62,58 @@ Constructor __init__(AbstractResponse)
 
         SupportsMixin.__init__(self)
 
+        self._connection_parameters = None
+        """
+Response linked connection parameters
+        """
         self._log_handler = None
         """
 The LogHandler is called whenever debug messages should be logged or errors
 happened.
         """
-        self._store = { }
-        """
-Response specific data store
-        """
 
         AbstractResponse._local.weakref_instance = ref(self)
+
+        self.supported_features['connection_parameters'] = self._supports_connection_parameters
+        self.supported_features['connection_settings'] = self._supports_connection_parameters
+    #
+
+    @property
+    def connection_parameters(self):
+        """
+Returns the parameters for the connection.
+
+:return: (dict) Connection parameters
+:since:  v1.0.0
+        """
+
+        return self._connection_parameters
+    #
+
+    @connection_parameters.setter
+    def connection_parameters(self, connection_parameters):
+        """
+Sets the parameters for the connection.
+
+:param connection_parameters: (dict) Connection parameters
+
+:since: v1.0.0
+        """
+
+        if (not isinstance(connection_parameters, Mapping)): raise TypeException("Connection parameters data type given is invalid")
+        self._connection_parameters = connection_parameters
+    #
+
+    @property
+    def connection_settings(self):
+        """
+Return the settings dict for the connection.
+
+:return: (dict) Connection settings dict
+:since:  v1.0.0
+        """
+
+        return (None if (self._connection_parameters is None) else self.connection_parameters.get("_dpt_settings", None))
     #
 
     @property
@@ -85,35 +126,6 @@ Returns the LogHandler.
         """
 
         return self._log_handler
-    #
-
-    @property
-    def runtime_settings(self):
-        """
-Return the runtime settings dict for the response.
-
-:return: (dict) Response runtime settings dict
-:since:  v1.0.0
-        """
-
-        return self.store['_dpt_settings']
-    #
-
-    @property
-    def store(self):
-        """
-Return the data store for the response.
-
-:return: (dict) Response store
-:since:  v1.0.0
-        """
-
-        if ("_dpt_settings" not in self._store):
-            self._store['_dpt_settings'] = StackedDict()
-            self._store['_dpt_settings'].add_dict(Settings.get_dict())
-        #
-
-        return self._store
     #
 
     def handle_critical_error(self, message):
@@ -166,6 +178,10 @@ Initializes default values from the a connection or request instance.
 
         if (not isinstance(connection_or_request, AbstractRequestMixin)): raise TypeException("Request instance given is invalid")
 
+        if (connection_or_request.is_supported("connection_parameters")):
+            self._connection_parameters = connection_or_request.connection_parameters
+        #
+
         self._log_handler = connection_or_request.log_handler
     #
 
@@ -187,6 +203,17 @@ Sends the prepared response and finishes all related tasks.
         """
 
         self.send()
+    #
+
+    def _supports_connection_parameters(self):
+        """
+Returns false if no connection parameters are initialized.
+
+:return: (bool) True if connection parameters are initialized
+:since:  v1.0.0
+        """
+
+        return (self._connection_parameters is not None)
     #
 
     @staticmethod
