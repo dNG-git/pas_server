@@ -38,7 +38,7 @@ Mixin to handle requests for actions of specific services and modules.
              Mozilla Public License, v. 2.0
     """
 
-    RE_NON_WORD_CHARS = re.compile("\\W+")
+    RE_SPECIAL_CHARACTERS = re.compile("\\W+")
     """
 RegExp to find non-word characters
     """
@@ -55,7 +55,7 @@ the automatic creation of __dict__ and __weakref__ for each instance.
 
     def __init__(self):
         """
-Constructor __init__(AbstractInnerHttpRequest)
+Constructor __init__(MsaRequestMixin)
 
 :since: v1.0.0
         """
@@ -66,11 +66,11 @@ Requested action
         """
         self._module_package = None
         """
-Request package name the module file belongs to
+Requested module package name
         """
         self._service_package_and_module = None
         """
-Request package name the module file belongs to
+Requested service package and module name
         """
     #
 
@@ -97,7 +97,7 @@ Sets the requested action.
         """
 
         action = action.strip()
-        if (action not in ( "", "-" )): self._action = MsaRequestMixin.RE_NON_WORD_CHARS.sub("_", action)
+        if (action not in ( "", "-" )): self._action = MsaRequestMixin.RE_SPECIAL_CHARACTERS.sub("_", action)
     #
 
     @property
@@ -123,7 +123,7 @@ Sets the requested module package name.
         """
 
         name = name.strip()
-        if (name not in ( "", "-" )): self._module_package = MsaRequestMixin.RE_NON_WORD_CHARS.sub("_", name)
+        if (name not in ( "", "-" )): self._module_package = MsaRequestMixin.RE_SPECIAL_CHARACTERS.sub("_", name)
     #
 
     @property
