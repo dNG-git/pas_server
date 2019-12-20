@@ -249,7 +249,7 @@ Initializes default values from the a connection or request instance.
 :since: v1.0.0
         """
 
-        if (not isinstance(connection_or_request, AbstractRequestMixin)): raise TypeException("Request instance given is invalid")
+        if (not isinstance(connection_or_request, AbstractRequestMixin)): raise TypeException("Connection or request instance given is invalid")
 
         if (connection_or_request.is_supported("connection_data")):
             self._client_host = connection_or_request.client_host
@@ -269,6 +269,7 @@ Initializes default values from the a connection or request instance.
             self._stream_response = connection_or_request.stream_response
         elif (connection_or_request.is_supported("stream_response_creation")):
             self._stream_response = connection_or_request.new_stream_response()
+            self._stream_response.init(self)
         #
     #
 
