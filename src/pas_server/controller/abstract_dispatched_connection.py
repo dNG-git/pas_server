@@ -17,7 +17,7 @@ https://www.direct-netware.de/redirect?licenses;mpl2
 #echo(__FILEPATH__)#
 """
 
-from socket import SHUT_RDWR
+from socket import socket, SHUT_RDWR, SOCK_STREAM
 from time import time
 
 from dpt_module_loader import NamedClassLoader
@@ -108,15 +108,12 @@ Finish transmission and cleanup resources.
         """
 
         if (self._server is not None):
-            self._server.active_unqueue(self._socket)
-
-            if (SHUT_RDWR is not None):
+            if (isinstance(self._socket, socket) and (self._socket.type & SOCK_STREAM) and SHUT_RDWR is not None):
                 try: self._socket.shutdown(SHUT_RDWR)
                 except Exception: pass
             #
 
-            try: self._socket.close()
-            except Exception: pass
+            self._server.remove_activated_socket(self._socket)
 
             self._server = None
             self._socket = None
@@ -178,21 +175,24 @@ Returns data read from the socket.
         return _return
     #
 
-    def init_from_dispatcher(self, server, socket):
+    def init_from_dispatcher(self, server, _socket):
         """
 Initializes the connection based on relevant instance data from the underlying
 server and socket.
 
 :param server: Server instance
-:param socket: Active socket resource
+:param _socket: Active socket resource
 
 :since: v1.0.0
         """
 
         self._server = server
+        self._socket = _socket
 
-        self._socket = socket
-        if (self._read_timeout is not None): self._socket.settimeout(self._read_timeout)
+        if (isinstance(self._socket, socket)
+            and (self._socket.type & SOCK_STREAM)
+            and self._read_timeout is not None
+           ): self._socket.settimeout(self._read_timeout)
     #
 
     def _set_data(self, data):
