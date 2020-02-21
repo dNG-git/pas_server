@@ -58,7 +58,7 @@ Initializes default values from the connection or request data given.
         if ("server_port" in kwargs): self._server_port = kwargs['server_port']
 
         if (isinstance(kwargs.get("connection_parameters"), Mapping)):
-            self._connection_parameters = kwargs['connection_or_request']
+            self._parameters.update(kwargs['connection_parameters'])
         #
 
         if ("log_handler" in kwargs): self._log_handler = kwargs['log_handler']
