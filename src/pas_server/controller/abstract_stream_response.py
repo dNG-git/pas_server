@@ -44,6 +44,11 @@ A stream response reads data from a streamer and writes it to a response object.
 
     # pylint: disable=unused-argument
 
+    STREAM_DIRECT = 1 << 1
+    """
+Do not set Transfer-Encoding but output content directly as soon as it is
+available.
+    """
     STREAM_ITERATOR = 1
     """
 Output content directly as soon as it is available and requested by a iterator.
@@ -256,9 +261,9 @@ Sends the given data as part of the response.
         """
 
         if (self._active):
-            data = Binary.bytes(data)
-
             if (self.stream_mode == AbstractStreamResponse.STREAM_NONE):
+                data = Binary.bytes(data)
+
                 if (self._data is None): self._data = Binary.BYTES_TYPE()
                 self._data += data
             else: self._write(data)
