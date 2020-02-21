@@ -142,6 +142,18 @@ Handles the uncatched exception thrown while connection handling.
         LogLine.error(exception, context = "pas_server")
     #
 
+    def init(self, connection_or_request = None):
+        """
+Initializes default values from the a connection or request instance.
+
+:param connection_or_request: Connection or request instance
+
+:since: v1.0.0
+        """
+
+        if (connection_or_request is not None): AbstractRequestMixin.init(self, connection_or_request)
+    #
+
     def _new_request(self):
         """
 Initializes a new request instance for this connection.
