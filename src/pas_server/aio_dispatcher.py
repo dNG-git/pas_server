@@ -156,10 +156,10 @@ Run the main loop for this server instance.
                 else: self._log_handler.error(handled_exception, context = "pas_server")
             #
         finally:
+            self.stop()
+
             self.local.event_loop.run_until_complete(self.local.event_loop.shutdown_asyncgens())
             self.local.event_loop.close()
-
-            self.stop()
         #
     #
 
@@ -223,7 +223,7 @@ Stops the listener and unqueues all running sockets.
             self.stopping_hook = ""
 
             if (self._event_loop is not None):
-                self._event_loop.call_soon_threadsafe(self._event_loop.stop)
+                if (self._event_loop.is_running()): self._event_loop.call_soon_threadsafe(self._event_loop.stop)
                 self._event_loop = None
             #
 
