@@ -26,7 +26,7 @@ connection instance.
 :copyright:  (C) direct Netware Group - All rights reserved
 :package:    pas
 :subpackage: server
-:since:      v1.0.0
+:since:      v1.1.0
 :license:    https://www.direct-netware.de/redirect?licenses;mpl2
              Mozilla Public License, v. 2.0
     """
@@ -45,7 +45,7 @@ the automatic creation of __dict__ and __weakref__ for each instance.
         """
 Constructor __init__(DatagramConnectionMixin)
 
-:since: v1.0.0
+:since: v1.1.0
         """
 
         self._datagram_data = None
@@ -62,7 +62,7 @@ Datagram data received
 Returns the datagram data of this connection.
 
 :return: (bytes) Datagram data received
-:since:  v1.0.0
+:since:  v1.1.0
         """
 
         if (self._datagram_data is None): self._datagram_data = self.get_data(65535)
