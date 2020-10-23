@@ -22,6 +22,7 @@ from weakref import proxy, ProxyTypes
 from dpt_module_loader import NamedClassLoader
 from dpt_runtime.supports_mixin import SupportsMixin
 from dpt_runtime.not_implemented_exception import NotImplementedException
+from dpt_runtime.operation_not_supported_exception import OperationNotSupportedException
 
 from ..controller.abstract_request import AbstractRequest
 from ..controller.abstract_response import AbstractResponse
@@ -186,6 +187,7 @@ Execute the requested action.
         """
 
         method = getattr(self, self.executable_method_name)
+        if (method is None): raise OperationNotSupportedException()
 
         if (self.is_result_expected):
             result = method()
