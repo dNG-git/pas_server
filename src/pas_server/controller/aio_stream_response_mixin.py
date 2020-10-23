@@ -27,7 +27,7 @@ class AioStreamResponseMixin(object):
 :copyright:  (C) direct Netware Group - All rights reserved
 :package:    pas
 :subpackage: server
-:since:      v1.0.0
+:since:      v1.1.0
 :license:    https://www.direct-netware.de/redirect?licenses;mpl2
              Mozilla Public License, v. 2.0
     """
@@ -46,7 +46,7 @@ the automatic creation of __dict__ and __weakref__ for each instance.
         """
 Constructor __init__(AioStreamResponseMixin)
 
-:since: v1.0.0
+:since: v1.1.0
         """
 
         self._aio_response_awaitables = [ ]
@@ -62,7 +62,7 @@ Constructor __init__(AioStreamResponseMixin)
         """
 Destructor __del__(AioStreamResponseMixin)
 
-:since: v1.0.0
+:since: v1.1.0
         """
 
         event_loop = None
@@ -80,7 +80,7 @@ Returns true if the response stream is finishing itself automatically after
 successful transmission.
 
 :return: (bool) True if finishing itself
-:since:  v1.0.0
+:since:  v1.1.0
         """
 
         return True
@@ -90,10 +90,16 @@ successful transmission.
         """
 Finish transmission and cleanup resources.
 
-:since: v1.0.0
+:since: v1.1.0
         """
 
-        await asyncio.gather(*self._aio_response_awaitables)
+        for awaitable in self._aio_response_awaitables:
+            try: await awaitable
+            except Exception as handled_exception:
+                if (self.log_handler != None): self.log_handler.error(handled_exception)
+            #
+        #
+
         self._aio_response_awaitables.clear()
     #
 
@@ -104,7 +110,7 @@ Wrap the "asyncio" stream writing callable.
 :param callable: Wrapped code
 
 :return: (object) Proxy method
-:since:  v1.0.0
+:since:  v1.1.0
     """
 
         def proxymethod(*args, **kwargs):
